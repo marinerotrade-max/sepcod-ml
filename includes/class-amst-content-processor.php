@@ -313,16 +313,35 @@ class AMST_Content_Processor {
                 // Properly handle UTF-8 encoding
                 $translated_text = $translations[ $index ];
                 
-                // Decode HTML entities
-                $translated_text = html_entity_decode( $translated_text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
-                
-                // Ensure proper UTF-8 encoding
-                if ( function_exists( 'mb_check_encoding' ) && ! mb_check_encoding( $translated_text, 'UTF-8' ) ) {
-                    $translated_text = mb_convert_encoding( $translated_text, 'UTF-8', 'UTF-8' );
+                // Fix multiple encoding issues for Slavic languages (Czech, Croatian, etc.)
+                // First, try to detect if content is double or triple encoded
+                $attempts = 0;
+                while ( $attempts < 3 && ( strpos( $translated_text, 'Ã' ) !== false || strpos( $translated_text, 'â€' ) !== false ) ) {
+                    $decoded = @html_entity_decode( $translated_text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+                    if ( $decoded === $translated_text ) {
+                        break; // No change, stop trying
+                    }
+                    $translated_text = $decoded;
+                    $attempts++;
                 }
                 
-                // Clean up any remaining encoding issues
+                // Ensure UTF-8 encoding
+                if ( function_exists( 'mb_check_encoding' ) ) {
+                    if ( ! mb_check_encoding( $translated_text, 'UTF-8' ) ) {
+                        // Try to convert from ISO-8859-1 or Windows-1252
+                        $translated_text = mb_convert_encoding( $translated_text, 'UTF-8', mb_detect_encoding( $translated_text, array( 'UTF-8', 'ISO-8859-1', 'Windows-1252' ), true ) );
+                    }
+                }
+                
+                // Final cleanup: remove control characters but preserve Unicode
                 $translated_text = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $translated_text );
+                
+                // Fix common encoding artifacts specific to Czech and Croatian
+                $translated_text = str_replace(
+                    array( 'Ãƒâ€¦', 'ÃƒÆ', 'Ã‚', 'Â¡', 'Â¯', 'Â¿', 'Â½' ),
+                    '',
+                    $translated_text
+                );
                 
                 $node->nodeValue = $translated_text;
             }

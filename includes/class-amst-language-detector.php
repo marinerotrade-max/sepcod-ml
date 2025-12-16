@@ -50,12 +50,40 @@ class AMST_Language_Detector {
         
         if ( ! empty( $potential_lang ) && in_array( $potential_lang, $enabled_languages, true ) ) {
             $this->current_language = $potential_lang;
+            // Store language choice in cookie for persistence
+            $this->set_language_cookie( $potential_lang );
         } else {
-            $this->current_language = $default_lang;
+            // Check if user has a language preference cookie
+            $cookie_lang = $this->get_language_cookie();
+            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) ) {
+                $this->current_language = $cookie_lang;
+            } else {
+                $this->current_language = $default_lang;
+            }
         }
         
         // Set as global for easy access.
         $GLOBALS['amst_current_language'] = $this->current_language;
+    }
+    
+    /**
+     * Set language preference cookie.
+     *
+     * @param string $lang Language code.
+     */
+    private function set_language_cookie( $lang ) {
+        if ( ! headers_sent() ) {
+            setcookie( 'amst_language', $lang, time() + ( 30 * DAY_IN_SECONDS ), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+        }
+    }
+    
+    /**
+     * Get language preference from cookie.
+     *
+     * @return string|null Language code or null if not set.
+     */
+    private function get_language_cookie() {
+        return isset( $_COOKIE['amst_language'] ) ? sanitize_text_field( wp_unslash( $_COOKIE['amst_language'] ) ) : null;
     }
     
     /**
@@ -115,16 +143,28 @@ class AMST_Language_Detector {
         // Remove current language prefix if exists.
         $enabled_languages = $this->get_enabled_languages();
         foreach ( $enabled_languages as $enabled_lang ) {
+            // Handle both "/lang/" and "/lang" at the end
             if ( 0 === strpos( $path, '/' . $enabled_lang . '/' ) ) {
                 $path = substr( $path, strlen( '/' . $enabled_lang ) );
                 break;
+            } elseif ( '/' . $enabled_lang === $path ) {
+                $path = '/';
+                break;
             }
+        }
+        
+        // Ensure path starts with slash
+        if ( empty( $path ) || '/' !== $path[0] ) {
+            $path = '/' . $path;
         }
         
         // Add new language prefix (except for default language).
         if ( $lang !== $default_lang ) {
             $path = '/' . $lang . $path;
         }
+        
+        // Clean up double slashes
+        $path = preg_replace( '#/+#', '/', $path );
         
         // Rebuild URL.
         $new_url = '';
