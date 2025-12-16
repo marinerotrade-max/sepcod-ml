@@ -72,3 +72,7 @@ phpunit.xml
 
 # Misc
 /tmp/
+
+# Test files
+test-plugin-load.php
+BUGFIX.md

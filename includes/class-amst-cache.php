@@ -33,16 +33,7 @@ class AMST_Cache {
      * Constructor.
      */
     public function __construct() {
-        add_action( 'init', array( $this, 'init_database' ) );
-    }
-    
-    /**
-     * Initialize database handler.
-     */
-    public function init_database() {
-        if ( ! $this->database ) {
-            $this->database = new AMST_Database();
-        }
+        $this->database = new AMST_Database();
     }
     
     /**
@@ -67,10 +58,6 @@ class AMST_Cache {
         }
         
         // Try database.
-        if ( ! $this->database ) {
-            $this->init_database();
-        }
-        
         $translation = $this->database->get_translation( $content_hash, $source_lang, $target_lang );
         
         if ( false !== $translation ) {
@@ -100,10 +87,6 @@ class AMST_Cache {
         }
         
         // Save to database.
-        if ( ! $this->database ) {
-            $this->init_database();
-        }
-        
         $saved = $this->database->save_translation( $content_hash, $source_lang, $target_lang, $original_text, $translated_text, $content_type );
         
         if ( $saved ) {
@@ -127,10 +110,6 @@ class AMST_Cache {
         wp_cache_flush();
         
         // Clear database.
-        if ( ! $this->database ) {
-            $this->init_database();
-        }
-        
         return $this->database->delete_translations( $args );
     }
     
@@ -152,10 +131,6 @@ class AMST_Cache {
      * @return array Statistics.
      */
     public function get_statistics() {
-        if ( ! $this->database ) {
-            $this->init_database();
-        }
-        
         return $this->database->get_statistics();
     }
     
