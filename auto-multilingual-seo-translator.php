@@ -30,6 +30,7 @@ require_once AMST_PLUGIN_DIR . 'includes/class-amst-database.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-translator.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-language-detector.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-cache.php';
+require_once AMST_PLUGIN_DIR . 'includes/class-amst-rewrite.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-seo.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-sitemap.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-integrations.php';
@@ -113,6 +114,13 @@ class Auto_Multilingual_SEO_Translator {
     public $admin;
     
     /**
+     * Rewrite handler.
+     *
+     * @var AMST_Rewrite
+     */
+    public $rewrite;
+    
+    /**
      * Get single instance.
      *
      * @return Auto_Multilingual_SEO_Translator
@@ -149,6 +157,7 @@ class Auto_Multilingual_SEO_Translator {
         $this->cache = new AMST_Cache();
         $this->translator = new AMST_Translator( $this->cache );
         $this->language_detector = new AMST_Language_Detector();
+        $this->rewrite = new AMST_Rewrite( $this->language_detector );
         $this->seo = new AMST_SEO( $this->language_detector );
         $this->sitemap = new AMST_Sitemap( $this->language_detector );
         $this->integrations = new AMST_Integrations();
