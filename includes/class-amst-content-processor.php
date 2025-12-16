@@ -422,10 +422,12 @@ class AMST_Content_Processor {
         
         // Step 3: Convert from other encodings if needed
         if ( function_exists( 'mb_detect_encoding' ) && function_exists( 'mb_convert_encoding' ) ) {
-            $detected_encoding = mb_detect_encoding( $text, array( 'UTF-8', 'ISO-8859-1', 'ISO-8859-2', 'Windows-1252', 'Windows-1250' ), true );
+            // Use correct encoding names for mb_detect_encoding
+            $encodings_to_try = array( 'UTF-8', 'ISO-8859-1', 'ISO-8859-2', 'CP1252', 'CP1250' );
+            $detected_encoding = @mb_detect_encoding( $text, $encodings_to_try, true );
             
             if ( $detected_encoding && $detected_encoding !== 'UTF-8' ) {
-                $text = mb_convert_encoding( $text, 'UTF-8', $detected_encoding );
+                $text = @mb_convert_encoding( $text, 'UTF-8', $detected_encoding );
             }
         }
         
