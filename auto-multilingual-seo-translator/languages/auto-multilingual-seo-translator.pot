@@ -1,0 +1,53 @@
+# Copyright (C) 2025 Auto Multilingual SEO Translator
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Auto Multilingual SEO Translator 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/marinerotrade-max/sepcod-ml/issues\n"
+"POT-Creation-Date: 2025-12-16 19:29:00+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2025-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: auto-multilingual-seo-translator.php:100
+msgid "Auto Multilingual SEO Translator"
+msgstr ""
+
+#: auto-multilingual-seo-translator.php:101
+msgid "Multilingual SEO"
+msgstr ""
+
+#: auto-multilingual-seo-translator.php:117
+msgid "General Settings"
+msgstr ""
+
+#: auto-multilingual-seo-translator.php:123
+msgid "Google Translate API Key"
+msgstr ""
+
+#: auto-multilingual-seo-translator.php:129
+msgid "Default Language"
+msgstr ""
+
+#: auto-multilingual-seo-translator.php:135
+msgid "Enabled Languages"
+msgstr ""
+
+#: auto-multilingual-seo-translator.php:141
+msgid "Enable Caching"
+msgstr ""
+
+#: auto-multilingual-seo-translator.php:147
+msgid "Enable Auto Language Detection"
+msgstr ""
+
+#: includes/class-language-switcher-widget.php:25
+msgid "Language Switcher"
+msgstr ""
+
+#: includes/class-language-switcher-widget.php:27
+msgid "Display a language switcher for multilingual content"
+msgstr ""

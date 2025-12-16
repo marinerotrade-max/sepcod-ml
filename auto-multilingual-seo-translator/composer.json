@@ -1,0 +1,46 @@
+{
+    "name": "marinerotrade-max/auto-multilingual-seo-translator",
+    "description": "WordPress plugin for automatic multilingual translation with SEO features",
+    "type": "wordpress-plugin",
+    "keywords": [
+        "wordpress",
+        "translation",
+        "multilingual",
+        "seo",
+        "google-translate",
+        "i18n",
+        "localization"
+    ],
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Marine Ro Trade Max",
+            "homepage": "https://github.com/marinerotrade-max"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "composer/installers": "^1.0 || ^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "wp-coding-standards/wpcs": "^2.3",
+        "phpcompatibility/phpcompatibility-wp": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "AMST\\": "includes/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.0"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "phpcs": "phpcs --standard=WordPress .",
+        "phpcbf": "phpcbf --standard=WordPress ."
+    }
+}

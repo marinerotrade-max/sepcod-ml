@@ -1,0 +1,279 @@
+/**
+ * Auto Multilingual SEO Translator - Admin Styles
+ */
+
+/* Settings Page */
+.amst-settings-wrap {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+.amst-settings-header {
+    background: #fff;
+    padding: 20px;
+    border-left: 4px solid #0073aa;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+
+.amst-settings-header h1 {
+    margin: 0 0 10px;
+    font-size: 24px;
+}
+
+.amst-settings-header p {
+    margin: 0;
+    color: #666;
+}
+
+/* Form Sections */
+.form-table th {
+    font-weight: 600;
+    padding: 20px 10px 20px 0;
+}
+
+.form-table td {
+    padding: 20px 10px;
+}
+
+.form-table input[type="text"],
+.form-table select {
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.form-table input[type="text"].regular-text {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Description Text */
+.form-table .description {
+    margin-top: 8px;
+    color: #666;
+    font-size: 13px;
+}
+
+/* Checkbox Groups */
+.form-table fieldset label {
+    display: block;
+    margin: 8px 0;
+}
+
+.form-table fieldset input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Status Indicators */
+.amst-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.amst-status.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.amst-status.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Info Boxes */
+.amst-info-box {
+    background: #fff;
+    border-left: 4px solid #0073aa;
+    padding: 15px;
+    margin: 20px 0;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.amst-info-box h3 {
+    margin-top: 0;
+    font-size: 16px;
+}
+
+.amst-info-box p {
+    margin-bottom: 0;
+    color: #666;
+}
+
+/* Warning Boxes */
+.amst-warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.amst-warning-box p {
+    margin: 0;
+    color: #856404;
+}
+
+/* Success Messages */
+.amst-success-message {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.amst-success-message p {
+    margin: 0;
+    color: #155724;
+}
+
+/* Error Messages */
+.amst-error-message {
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.amst-error-message p {
+    margin: 0;
+    color: #721c24;
+}
+
+/* Statistics Table */
+.amst-stats-table {
+    width: 100%;
+    max-width: 600px;
+    background: #fff;
+    border-collapse: collapse;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.amst-stats-table th,
+.amst-stats-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.amst-stats-table th {
+    background: #f7f7f7;
+    font-weight: 600;
+}
+
+.amst-stats-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Buttons */
+.amst-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #0073aa;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.amst-button:hover {
+    background: #005a87;
+    color: #fff;
+}
+
+.amst-button.secondary {
+    background: #6c757d;
+}
+
+.amst-button.secondary:hover {
+    background: #5a6268;
+}
+
+/* Loading Spinner */
+.amst-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #0073aa;
+    animation: amst-spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+@keyframes amst-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Tabs */
+.amst-tabs {
+    margin: 20px 0;
+}
+
+.amst-tab-nav {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+    list-style: none;
+    padding: 0;
+}
+
+.amst-tab-nav li {
+    margin-right: 5px;
+}
+
+.amst-tab-nav a {
+    display: block;
+    padding: 12px 20px;
+    text-decoration: none;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.amst-tab-nav a:hover {
+    color: #0073aa;
+}
+
+.amst-tab-nav a.active {
+    color: #0073aa;
+    border-bottom-color: #0073aa;
+}
+
+.amst-tab-content {
+    display: none;
+}
+
+.amst-tab-content.active {
+    display: block;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .form-table th,
+    .form-table td {
+        display: block;
+        width: 100%;
+        padding: 10px 0;
+    }
+    
+    .form-table input[type="text"].regular-text {
+        max-width: 100%;
+    }
+    
+    .amst-tab-nav {
+        flex-direction: column;
+    }
+    
+    .amst-tab-nav li {
+        margin-right: 0;
+        margin-bottom: 5px;
+    }
+}
