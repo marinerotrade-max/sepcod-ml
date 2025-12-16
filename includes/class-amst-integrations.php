@@ -40,6 +40,9 @@ class AMST_Integrations {
         if ( defined( 'LSCWP_V' ) ) {
             $this->init_litespeed_integration();
         }
+        
+        // Theme-specific integrations.
+        $this->init_theme_integrations();
     }
     
     /**
@@ -157,6 +160,9 @@ class AMST_Integrations {
         
         // Purge cache when translations are cleared.
         add_action( 'amst_translations_cleared', array( $this, 'purge_litespeed_cache' ) );
+        
+        // Add vary cookie on init to ensure proper cache separation
+        add_action( 'init', array( $this, 'set_litespeed_vary_cookie' ), 5 );
     }
     
     /**
@@ -198,6 +204,23 @@ class AMST_Integrations {
     }
     
     /**
+     * Set LiteSpeed vary cookie for proper cache separation.
+     */
+    public function set_litespeed_vary_cookie() {
+        if ( ! defined( 'LSCWP_V' ) ) {
+            return;
+        }
+        
+        $language_detector = amst()->language_detector;
+        $current_lang = $language_detector->get_current_language();
+        
+        // Set vary cookie to ensure different cache for each language
+        if ( function_exists( 'litespeed_vary_add' ) ) {
+            litespeed_vary_add( 'amst_lang_' . $current_lang );
+        }
+    }
+    
+    /**
      * Purge LiteSpeed cache.
      */
     public function purge_litespeed_cache() {
@@ -206,5 +229,122 @@ class AMST_Integrations {
         }
         
         do_action( 'litespeed_purge_all' );
+    }
+    
+    /**
+     * Initialize theme-specific integrations.
+     */
+    private function init_theme_integrations() {
+        $current_theme = wp_get_theme();
+        $theme_name = $current_theme->get( 'Name' );
+        $theme_template = $current_theme->get_template();
+        
+        // Inspiro theme integration
+        if ( 'Inspiro' === $theme_name || 'inspiro' === $theme_template ) {
+            $this->init_inspiro_integration();
+        }
+    }
+    
+    /**
+     * Initialize Inspiro theme integration.
+     */
+    private function init_inspiro_integration() {
+        // Inspiro uses custom content output, hook into their filters
+        add_filter( 'inspiro_content_width', array( $this, 'translate_inspiro_content' ), 999 );
+        add_filter( 'the_title', array( $this, 'translate_inspiro_title' ), 999, 2 );
+        
+        // Force Elementor content processing for Inspiro
+        if ( defined( 'ELEMENTOR_VERSION' ) ) {
+            add_filter( 'elementor/frontend/builder_content_data', array( $this, 'translate_elementor_data' ), 999 );
+        }
+    }
+    
+    /**
+     * Translate Inspiro content.
+     *
+     * @param string $content Content.
+     * @return string Translated content.
+     */
+    public function translate_inspiro_content( $content ) {
+        if ( empty( $content ) ) {
+            return $content;
+        }
+        
+        $language_detector = amst()->language_detector;
+        $current_lang = $language_detector->get_current_language();
+        $default_lang = $language_detector->get_default_language();
+        
+        if ( $current_lang === $default_lang ) {
+            return $content;
+        }
+        
+        $content_processor = amst()->content_processor;
+        return $content_processor->translate_content( $content, $current_lang );
+    }
+    
+    /**
+     * Translate Inspiro title.
+     *
+     * @param string $title Title.
+     * @param int    $post_id Post ID.
+     * @return string Translated title.
+     */
+    public function translate_inspiro_title( $title, $post_id = 0 ) {
+        if ( empty( $title ) || is_admin() ) {
+            return $title;
+        }
+        
+        $language_detector = amst()->language_detector;
+        $current_lang = $language_detector->get_current_language();
+        $default_lang = $language_detector->get_default_language();
+        
+        if ( $current_lang === $default_lang ) {
+            return $title;
+        }
+        
+        $translator = amst()->translator;
+        $translated = $translator->translate( $title, $current_lang, $default_lang );
+        
+        if ( is_wp_error( $translated ) ) {
+            return $title;
+        }
+        
+        return $translated;
+    }
+    
+    /**
+     * Translate Elementor builder data.
+     *
+     * @param array $data Elementor data.
+     * @return array Translated data.
+     */
+    public function translate_elementor_data( $data ) {
+        if ( empty( $data ) || ! is_array( $data ) ) {
+            return $data;
+        }
+        
+        $language_detector = amst()->language_detector;
+        $current_lang = $language_detector->get_current_language();
+        $default_lang = $language_detector->get_default_language();
+        
+        if ( $current_lang === $default_lang ) {
+            return $data;
+        }
+        
+        // Walk through Elementor data and translate text content
+        array_walk_recursive( $data, function( &$value, $key ) use ( $current_lang, $default_lang ) {
+            if ( ( 'editor' === $key || 'text' === $key || 'title' === $key || 'description' === $key ) 
+                && is_string( $value ) && ! empty( $value ) ) {
+                
+                $translator = amst()->translator;
+                $translated = $translator->translate( $value, $current_lang, $default_lang );
+                
+                if ( ! is_wp_error( $translated ) ) {
+                    $value = $translated;
+                }
+            }
+        });
+        
+        return $data;
     }
 }

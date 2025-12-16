@@ -310,7 +310,21 @@ class AMST_Content_Processor {
         // Replace text nodes with translations.
         foreach ( $text_node_map as $index => $node ) {
             if ( isset( $translations[ $index ] ) ) {
-                $node->nodeValue = html_entity_decode( $translations[ $index ], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+                // Properly handle UTF-8 encoding
+                $translated_text = $translations[ $index ];
+                
+                // Decode HTML entities
+                $translated_text = html_entity_decode( $translated_text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+                
+                // Ensure proper UTF-8 encoding
+                if ( function_exists( 'mb_check_encoding' ) && ! mb_check_encoding( $translated_text, 'UTF-8' ) ) {
+                    $translated_text = mb_convert_encoding( $translated_text, 'UTF-8', 'UTF-8' );
+                }
+                
+                // Clean up any remaining encoding issues
+                $translated_text = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $translated_text );
+                
+                $node->nodeValue = $translated_text;
             }
         }
         
