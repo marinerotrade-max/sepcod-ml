@@ -219,7 +219,18 @@ class AMST_Language_Detector {
     public function get_language_switcher() {
         $current_lang = $this->get_current_language();
         $enabled_languages = $this->get_enabled_languages();
-        $current_url = $this->get_current_url();
+        
+        // Get proper current URL - handle homepage specially
+        if ( is_front_page() || is_home() ) {
+            $current_url = home_url( '/' );
+            // Add current language prefix if not default
+            $default_lang = $this->get_default_language();
+            if ( $current_lang !== $default_lang ) {
+                $current_url = home_url( '/' . $current_lang . '/' );
+            }
+        } else {
+            $current_url = $this->get_current_url();
+        }
         
         $translator = amst()->translator;
         $supported_languages = $translator->get_supported_languages();

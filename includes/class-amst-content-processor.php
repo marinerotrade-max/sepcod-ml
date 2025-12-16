@@ -310,38 +310,10 @@ class AMST_Content_Processor {
         // Replace text nodes with translations.
         foreach ( $text_node_map as $index => $node ) {
             if ( isset( $translations[ $index ] ) ) {
-                // Properly handle UTF-8 encoding
                 $translated_text = $translations[ $index ];
                 
-                // Fix multiple encoding issues for Slavic languages (Czech, Croatian, etc.)
-                // First, try to detect if content is double or triple encoded
-                $attempts = 0;
-                while ( $attempts < 3 && ( strpos( $translated_text, 'Ã' ) !== false || strpos( $translated_text, 'â€' ) !== false ) ) {
-                    $decoded = @html_entity_decode( $translated_text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
-                    if ( $decoded === $translated_text ) {
-                        break; // No change, stop trying
-                    }
-                    $translated_text = $decoded;
-                    $attempts++;
-                }
-                
-                // Ensure UTF-8 encoding
-                if ( function_exists( 'mb_check_encoding' ) ) {
-                    if ( ! mb_check_encoding( $translated_text, 'UTF-8' ) ) {
-                        // Try to convert from ISO-8859-1 or Windows-1252
-                        $translated_text = mb_convert_encoding( $translated_text, 'UTF-8', mb_detect_encoding( $translated_text, array( 'UTF-8', 'ISO-8859-1', 'Windows-1252' ), true ) );
-                    }
-                }
-                
-                // Final cleanup: remove control characters but preserve Unicode
-                $translated_text = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $translated_text );
-                
-                // Fix common encoding artifacts specific to Czech and Croatian
-                $translated_text = str_replace(
-                    array( 'Ãƒâ€¦', 'ÃƒÆ', 'Ã‚', 'Â¡', 'Â¯', 'Â¿', 'Â½' ),
-                    '',
-                    $translated_text
-                );
+                // Comprehensive encoding fix for all languages
+                $translated_text = $this->fix_encoding( $translated_text );
                 
                 $node->nodeValue = $translated_text;
             }
@@ -398,5 +370,106 @@ class AMST_Content_Processor {
         }
         
         return true;
+    }
+    
+    /**
+     * Comprehensive encoding fix for all languages.
+     * 
+     * @param string $text Text to fix.
+     * @return string Fixed text.
+     */
+    private function fix_encoding( $text ) {
+        if ( empty( $text ) || ! is_string( $text ) ) {
+            return $text;
+        }
+        
+        // Step 1: If text is already valid UTF-8 and doesn't contain encoding artifacts, return as-is
+        if ( function_exists( 'mb_check_encoding' ) && mb_check_encoding( $text, 'UTF-8' ) ) {
+            // Check for common encoding artifacts
+            if ( strpos( $text, 'Ã' ) === false && strpos( $text, 'â€' ) === false && strpos( $text, 'Â' ) === false ) {
+                return $text;
+            }
+        }
+        
+        // Step 2: Fix double/triple UTF-8 encoding (most common issue)
+        $original = $text;
+        $iterations = 0;
+        $max_iterations = 5;
+        
+        while ( $iterations < $max_iterations ) {
+            // Try utf8_decode if available (converts UTF-8 to ISO-8859-1)
+            if ( function_exists( 'utf8_decode' ) ) {
+                $decoded = @utf8_decode( $text );
+                if ( $decoded !== $text && mb_check_encoding( $decoded, 'UTF-8' ) ) {
+                    $text = $decoded;
+                    $iterations++;
+                    continue;
+                }
+            }
+            
+            // Try mb_convert_encoding
+            if ( function_exists( 'mb_convert_encoding' ) ) {
+                $decoded = @mb_convert_encoding( $text, 'UTF-8', 'UTF-8' );
+                if ( $decoded !== $text ) {
+                    $text = $decoded;
+                    $iterations++;
+                    continue;
+                }
+            }
+            
+            break;
+        }
+        
+        // Step 3: Convert from other encodings if needed
+        if ( function_exists( 'mb_detect_encoding' ) && function_exists( 'mb_convert_encoding' ) ) {
+            $detected_encoding = mb_detect_encoding( $text, array( 'UTF-8', 'ISO-8859-1', 'ISO-8859-2', 'Windows-1252', 'Windows-1250' ), true );
+            
+            if ( $detected_encoding && $detected_encoding !== 'UTF-8' ) {
+                $text = mb_convert_encoding( $text, 'UTF-8', $detected_encoding );
+            }
+        }
+        
+        // Step 4: HTML entity decode (handles &amp; etc.)
+        $text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+        
+        // Step 5: Fix specific encoding artifacts
+        $text = str_replace(
+            array(
+                // Common UTF-8 corruption patterns
+                'Ãƒâ€¦', 'ÃƒÆ', 'Ãƒâ€', 'Ã‚Â', 'Ã‚', 
+                'Â¡', 'Â¯', 'Â¿', 'Â½', 'Â°', 'Â«', 'Â»',
+                // Czech specific
+                'Ã„', 'Ã©', 'Ã­', 'Ãº', 'Å¯', 'Å™', 'Å¡', 'Å¾',
+                // Croatian specific  
+                'Ä', 'Å', 'Ã¡',
+                // Control characters
+                '�',
+            ),
+            array(
+                '', '', '', '', '',
+                '', '', '', '', '', '', '',
+                '', '', '', '', '', '', '', '',
+                '', '', '',
+                '',
+            ),
+            $text
+        );
+        
+        // Step 6: Remove any remaining control characters but preserve valid Unicode
+        $text = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text );
+        
+        // Step 7: Remove byte order marks
+        $text = str_replace( "\xEF\xBB\xBF", '', $text );
+        
+        // Step 8: Final UTF-8 validation and cleanup
+        if ( function_exists( 'mb_check_encoding' ) && ! mb_check_encoding( $text, 'UTF-8' ) ) {
+            // Last resort: remove invalid UTF-8 sequences
+            $text = mb_convert_encoding( $text, 'UTF-8', 'UTF-8' );
+        }
+        
+        // Trim whitespace
+        $text = trim( $text );
+        
+        return $text;
     }
 }
