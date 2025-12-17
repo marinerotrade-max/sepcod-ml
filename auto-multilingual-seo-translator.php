@@ -3,7 +3,7 @@
  * Plugin Name: Auto Multilingual SEO Translator
  * Plugin URI: https://github.com/marinerotrade-max/sepcod-ml
  * Description: Automatically translate all website content into multiple languages using Google Cloud Translation API with server-side rendering for SEO.
- * Version: 1.3.7
+ * Version: 1.3.8
  * Author: Majed Nefzi
  * Author URI: https://github.com/marinerotrade-max
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AMST_VERSION', '1.3.7' );
+define( 'AMST_VERSION', '1.3.8' );
 define( 'AMST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AMST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AMST_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -190,6 +190,12 @@ class Auto_Multilingual_SEO_Translator {
         $this->manual_translations = new AMST_Manual_Translations( $this->cache, $this->database );
         $this->comprehensive_filters = new AMST_Comprehensive_Filters( $this->language_detector, $this->content_processor );
         $this->language_switcher = new AMST_Language_Switcher();
+        
+        // Attach final cleanup filters for encoding issues (priority 999)
+        AMST_UTF8_Helper::attach_final_cleanup_filters();
+        
+        // Send UTF-8 header early
+        add_action( 'init', array( 'AMST_UTF8_Helper', 'send_utf8_header' ), 1 );
         
         if ( is_admin() ) {
             $this->admin = new AMST_Admin();

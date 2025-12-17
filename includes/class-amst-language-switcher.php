@@ -149,16 +149,19 @@ class AMST_Language_Switcher {
 	/**
 	 * Get URL for switching to a specific language.
 	 *
+	 * FIXED: Properly replaces language codes instead of stacking them.
+	 * Handles homepage correctly and generates absolute URLs from root.
+	 *
 	 * @param string $lang Language code.
-	 * @return string Language-specific URL.
+	 * @return string Language-specific URL (absolute path from root).
 	 */
 	private function get_language_url( $lang ) {
 		$language_detector = amst()->language_detector;
 		$default_lang = $language_detector->get_default_language();
 		$current_lang = $language_detector->get_current_language();
 		
-		// Get home URL
-		$home_url = home_url( '/' );
+		// Get home URL (always absolute)
+		$home_url = untrailingslashit( home_url( '/' ) );
 		
 		// Check if we're on homepage using multiple detection methods
 		$is_homepage = $this->is_homepage();
@@ -172,7 +175,7 @@ class AMST_Language_Switcher {
 				$url_template = $homepage_urls[ $lang ];
 				$url = str_replace( 
 					array( '{home}', '{lang}' ), 
-					array( rtrim( $home_url, '/' ), $lang ), 
+					array( $home_url, $lang ), 
 					$url_template 
 				);
 				return trailingslashit( $url );
@@ -181,54 +184,77 @@ class AMST_Language_Switcher {
 			// Fallback to automatic generation
 			if ( $lang === $default_lang ) {
 				// Default language - just home URL
-				return $home_url;
+				return trailingslashit( $home_url );
 			} else {
 				// Other language - home URL with language prefix
-				return trailingslashit( $home_url ) . $lang . '/';
+				// e.g., domain.com/de/
+				return trailingslashit( $home_url . '/' . $lang );
 			}
 		}
 		
-		// For all other pages, use current URL and modify it
-		global $wp;
-		$current_url = home_url( add_query_arg( array(), $wp->request ) );
+		// For all other pages, get current URL and replace/add language code
+		// Use REQUEST_URI for the actual URL path
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		
-		// Parse current URL
-		$parsed = wp_parse_url( $current_url );
-		$path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
-		$query = isset( $parsed['query'] ) ? $parsed['query'] : '';
-		
-		// Remove home path from current path to get relative path
-		$home_path = wp_parse_url( $home_url, PHP_URL_PATH );
-		if ( ! empty( $home_path ) && $home_path !== '/' ) {
-			$home_path = rtrim( $home_path, '/' );
-			$path = str_replace( $home_path, '', $path );
+		if ( empty( $request_uri ) ) {
+			// Fallback to WordPress request
+			global $wp;
+			$request_uri = '/' . ( isset( $wp->request ) ? $wp->request : '' );
 		}
 		
-		// Remove existing language prefix from path
-		$path = ltrim( $path, '/' );
-		$path_parts = explode( '/', $path );
+		// Parse the URI to separate path from query string
+		$uri_parts = explode( '?', $request_uri, 2 );
+		$path = $uri_parts[0];
+		$query_string = isset( $uri_parts[1] ) ? $uri_parts[1] : '';
 		
-		// Check if first part is a language code and remove it
-		if ( ! empty( $path_parts[0] ) && $language_detector->is_enabled_language( $path_parts[0] ) ) {
-			array_shift( $path_parts );
+		// Remove leading and trailing slashes for processing
+		$path = trim( $path, '/' );
+		
+		// Split path into segments
+		$path_segments = empty( $path ) ? array() : explode( '/', $path );
+		
+		// Get all enabled language codes
+		$enabled_languages = $language_detector->get_enabled_languages();
+		
+		// Check if the first segment is a language code
+		$has_lang_prefix = false;
+		if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
+			// Remove the existing language code
+			array_shift( $path_segments );
+			$has_lang_prefix = true;
 		}
 		
-		// Rebuild path
-		$clean_path = implode( '/', $path_parts );
+		// Now $path_segments contains the path WITHOUT any language prefix
+		$clean_path = implode( '/', $path_segments );
 		
-		// Build new URL
+		// Build the new URL with absolute path from root
 		if ( $lang === $default_lang ) {
-			// For default language, no prefix
-			$new_url = trailingslashit( $home_url ) . $clean_path;
+			// For default language, no prefix needed
+			if ( empty( $clean_path ) ) {
+				// Homepage in default language
+				$new_url = $home_url . '/';
+			} else {
+				// Other page in default language
+				$new_url = $home_url . '/' . $clean_path . '/';
+			}
 		} else {
-			// For other languages, add prefix
-			$new_url = trailingslashit( $home_url ) . $lang . '/' . $clean_path;
+			// For non-default languages, add the language prefix
+			if ( empty( $clean_path ) ) {
+				// Homepage in target language: domain.com/de/
+				$new_url = $home_url . '/' . $lang . '/';
+			} else {
+				// Other page in target language: domain.com/de/about/
+				$new_url = $home_url . '/' . $lang . '/' . $clean_path . '/';
+			}
 		}
 		
-		// Add query string if exists
-		if ( ! empty( $query ) ) {
-			$new_url .= '?' . $query;
+		// Add query string if it exists
+		if ( ! empty( $query_string ) ) {
+			$new_url .= '?' . $query_string;
 		}
+		
+		// Normalize slashes (avoid double slashes)
+		$new_url = preg_replace( '#(?<!:)//+#', '/', $new_url );
 		
 		return $new_url;
 	}

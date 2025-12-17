@@ -211,4 +211,110 @@ class AMST_UTF8_Helper {
 		// Using ENT_NOQUOTES to preserve quotes in translations
 		return htmlspecialchars( $text, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8', $double_encode );
 	}
+	
+	/**
+	 * Final output cleanup function with recursive double-decoding.
+	 *
+	 * This function handles persistent encoding issues like c'est instead of c'est.
+	 * It recursively decodes HTML entities until no more encoding is found.
+	 *
+	 * Use this as the FINAL filter before text reaches the browser.
+	 *
+	 * @param string $text Text to clean up.
+	 * @param int    $max_iterations Maximum decoding iterations (default 3, prevents infinite loops).
+	 * @return string Cleaned text with proper UTF-8 encoding.
+	 */
+	public static function final_output_cleanup( $text, $max_iterations = 3 ) {
+		if ( empty( $text ) ) {
+			return $text;
+		}
+		
+		// Store original for comparison
+		$previous_text = '';
+		$iteration = 0;
+		
+		// Recursively decode until text stops changing or max iterations reached
+		while ( $previous_text !== $text && $iteration < $max_iterations ) {
+			$previous_text = $text;
+			
+			// Decode HTML entities
+			$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+			
+			// Fix specific problematic patterns
+			// c'est → c'est
+			$text = str_replace( array( '&#039;', '&apos;', '&#39;' ), "'", $text );
+			
+			// Common double-encoded patterns
+			$text = str_replace( array( '&amp;#', '&amp;nbsp;' ), array( '&#', '&nbsp;' ), $text );
+			
+			$iteration++;
+		}
+		
+		// Fix Croatian and other special characters that may still be encoded
+		$special_chars = array(
+			'&#269;' => 'č', '&#268;' => 'Č',
+			'&#263;' => 'ć', '&#262;' => 'Ć',
+			'&#273;' => 'đ', '&#272;' => 'Đ',
+			'&#353;' => 'š', '&#352;' => 'Š',
+			'&#382;' => 'ž', '&#381;' => 'Ž',
+			'&eacute;' => 'é', '&egrave;' => 'è',
+			'&ecirc;' => 'ê', '&euml;' => 'ë',
+			'&agrave;' => 'à', '&acirc;' => 'â',
+			'&uuml;' => 'ü', '&ouml;' => 'ö',
+			'&auml;' => 'ä', '&szlig;' => 'ß',
+			'&ntilde;' => 'ñ', '&ccedil;' => 'ç',
+		);
+		
+		$text = str_replace( array_keys( $special_chars ), array_values( $special_chars ), $text );
+		
+		// Ensure valid UTF-8
+		if ( ! mb_check_encoding( $text, 'UTF-8' ) ) {
+			$text = mb_convert_encoding( $text, 'UTF-8', 'UTF-8' );
+		}
+		
+		// Final normalization
+		if ( class_exists( 'Normalizer' ) && Normalizer::isNormalized( $text, Normalizer::FORM_C ) === false ) {
+			$text = Normalizer::normalize( $text, Normalizer::FORM_C );
+		}
+		
+		return $text;
+	}
+	
+	/**
+	 * Apply final cleanup to WordPress content filters.
+	 *
+	 * Call this method during plugin initialization to attach the cleanup
+	 * function to WordPress filters with very high priority (999).
+	 */
+	public static function attach_final_cleanup_filters() {
+		// Apply to content
+		add_filter( 'the_content', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		
+		// Apply to titles
+		add_filter( 'the_title', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		add_filter( 'single_post_title', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		
+		// Apply to menu items
+		add_filter( 'nav_menu_item_title', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		add_filter( 'wp_nav_menu_items', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		
+		// Apply to excerpts
+		add_filter( 'the_excerpt', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		add_filter( 'get_the_excerpt', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		
+		// Apply to widget text
+		add_filter( 'widget_text', array( __CLASS__, 'final_output_cleanup' ), 999 );
+		add_filter( 'widget_title', array( __CLASS__, 'final_output_cleanup' ), 999 );
+	}
+	
+	/**
+	 * Send UTF-8 header to ensure proper character display.
+	 *
+	 * Call this early in the WordPress lifecycle (e.g., 'init' hook).
+	 */
+	public static function send_utf8_header() {
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: text/html; charset=UTF-8' );
+		}
+	}
 }
