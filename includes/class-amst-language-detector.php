@@ -57,9 +57,14 @@ class AMST_Language_Detector {
             // No language prefix in URL
             // Check if user has a language preference cookie
             $cookie_lang = $this->get_language_cookie();
-            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) && $cookie_lang !== $default_lang ) {
+            
+            // Only redirect if NOT in admin area and NOT on login page
+            $is_admin = is_admin() || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() );
+            $is_login = isset( $GLOBALS['pagenow'] ) && in_array( $GLOBALS['pagenow'], array( 'wp-login.php', 'wp-register.php' ), true );
+            
+            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) && $cookie_lang !== $default_lang && ! $is_admin && ! $is_login ) {
                 // User has a saved preference for a non-default language
-                // Redirect to the language-prefixed URL to maintain consistency
+                // Redirect to the language-prefixed URL to maintain consistency (frontend only)
                 $current_url = $this->get_current_url();
                 $lang_url = $this->get_language_url( $current_url, $cookie_lang );
                 if ( $current_url !== $lang_url ) {
