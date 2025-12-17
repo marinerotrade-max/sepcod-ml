@@ -71,15 +71,22 @@
         
         // Language option click handler
         $('.amst-language-option').on('click', function(e) {
+            var $this = $(this);
+            var href = $this.attr('href');
+            
+            // Prevent default to handle closing manually
+            e.preventDefault();
+            e.stopPropagation();
+            
             // Show loading state
-            $(this).closest('.amst-language-switcher').addClass('loading');
+            $this.closest('.amst-language-switcher').addClass('loading');
             
             // Close modal immediately before navigation
-            var $switcher = $(this).closest('.amst-language-switcher');
+            var $switcher = $this.closest('.amst-language-switcher');
             var $overlay = $switcher.find('.amst-modal-overlay');
             
             if ($overlay.length && $overlay.is(':visible')) {
-                $overlay.hide();
+                $overlay.css('display', 'none');
                 $switcher.find('.amst-current-language').removeClass('active');
                 $('body').css('overflow', '');
             }
@@ -87,12 +94,15 @@
             // Close dropdown if present
             var $dropdown = $switcher.find('.amst-dropdown-menu');
             if ($dropdown.length && $dropdown.is(':visible')) {
-                $dropdown.hide();
+                $dropdown.css('display', 'none');
                 $switcher.find('.amst-current-language').removeClass('active');
             }
             
-            // Allow default behavior (link navigation)
-            // The page will reload with the new language
+            // Navigate to the language URL after a tiny delay to ensure modal is closed
+            // This ensures compatibility across all browsers
+            setTimeout(function() {
+                window.location.href = href;
+            }, 50);
         });
         
         // Keyboard navigation for modal
