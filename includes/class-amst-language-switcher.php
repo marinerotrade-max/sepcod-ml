@@ -53,6 +53,9 @@ class AMST_Language_Switcher {
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_shortcode( 'amst_language_switcher', array( $this, 'render_shortcode' ) );
+		
+		// Simple menu link filter - only modifies menu links to maintain language
+		add_filter( 'wp_nav_menu_objects', array( $this, 'add_language_to_menu_links' ), 10, 2 );
 	}
 	
 	/**
@@ -338,5 +341,109 @@ class AMST_Language_Switcher {
 	 */
 	public function get_flag_icon( $lang ) {
 		return isset( $this->flag_icons[ $lang ] ) ? $this->flag_icons[ $lang ] : '🌐';
+	}
+	
+	/**
+	 * Add language prefix to menu links (SIMPLE APPROACH).
+	 * 
+	 * This is a minimal, safe implementation that only modifies menu item URLs
+	 * to add the current language prefix if we're viewing a non-default language.
+	 *
+	 * @param array $items Menu items.
+	 * @param object $args Menu arguments.
+	 * @return array Modified menu items.
+	 */
+	public function add_language_to_menu_links( $items, $args ) {
+		// Skip if in admin
+		if ( is_admin() ) {
+			return $items;
+		}
+		
+		$language_detector = amst()->language_detector;
+		$current_lang = $language_detector->get_current_language();
+		$default_lang = $language_detector->get_default_language();
+		
+		// If we're on default language, don't modify menu links
+		if ( $current_lang === $default_lang ) {
+			return $items;
+		}
+		
+		// Get home URL for comparison
+		$home_url = untrailingslashit( home_url() );
+		
+		// Loop through each menu item
+		foreach ( $items as $item ) {
+			// Only modify if URL is set
+			if ( empty( $item->url ) ) {
+				continue;
+			}
+			
+			// Parse the URL
+			$parsed_url = parse_url( $item->url );
+			
+			// Only modify internal links (same host or relative URLs)
+			$is_internal = false;
+			if ( empty( $parsed_url['host'] ) ) {
+				// Relative URL - definitely internal
+				$is_internal = true;
+			} elseif ( isset( $parsed_url['host'] ) ) {
+				// Check if host matches current site
+				$site_host = parse_url( $home_url, PHP_URL_HOST );
+				if ( $parsed_url['host'] === $site_host ) {
+					$is_internal = true;
+				}
+			}
+			
+			// Skip external links
+			if ( ! $is_internal ) {
+				continue;
+			}
+			
+			// Skip special protocols
+			if ( isset( $parsed_url['scheme'] ) && in_array( $parsed_url['scheme'], array( 'mailto', 'tel', 'javascript' ), true ) ) {
+				continue;
+			}
+			
+			// Get the path
+			$path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '/';
+			$path = trim( $path, '/' );
+			
+			// Check if path already has language prefix
+			$enabled_languages = $language_detector->get_enabled_languages();
+			$path_segments = empty( $path ) ? array() : explode( '/', $path );
+			
+			$has_lang_prefix = false;
+			if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
+				// Already has a language prefix, skip
+				continue;
+			}
+			
+			// Build new URL with language prefix
+			if ( empty( $path ) ) {
+				// Home link: add language prefix
+				$new_path = '/' . $current_lang . '/';
+			} else {
+				// Other links: prepend language prefix
+				$new_path = '/' . $current_lang . '/' . $path . '/';
+			}
+			
+			// Rebuild URL
+			$new_url = $home_url . $new_path;
+			
+			// Add query string if present
+			if ( ! empty( $parsed_url['query'] ) ) {
+				$new_url .= '?' . $parsed_url['query'];
+			}
+			
+			// Add fragment if present
+			if ( ! empty( $parsed_url['fragment'] ) ) {
+				$new_url .= '#' . $parsed_url['fragment'];
+			}
+			
+			// Update menu item URL
+			$item->url = $new_url;
+		}
+		
+		return $items;
 	}
 }
