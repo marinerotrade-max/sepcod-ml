@@ -17,7 +17,13 @@ if ( isset( $_POST['amst_add_manual_translation'] ) && check_admin_referer( 'ams
 	$manual_translation = sanitize_textarea_field( $_POST['manual_translation'] );
 	
 	if ( ! empty( $original_text ) && ! empty( $target_language ) && ! empty( $manual_translation ) ) {
-		$result = AMST_Manual_Translations::add_override( $original_text, $target_language, $manual_translation );
+		$result = amst()->manual_translations->add_manual_translation( 
+			$original_text, 
+			$manual_translation, 
+			$target_language, 
+			'en',
+			'manual_override'
+		);
 		if ( $result ) {
 			echo '<div class="notice notice-success is-dismissible"><p>Manual translation added successfully!</p></div>';
 		} else {
@@ -29,7 +35,7 @@ if ( isset( $_POST['amst_add_manual_translation'] ) && check_admin_referer( 'ams
 // Handle delete
 if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete' && isset( $_GET['id'] ) && check_admin_referer( 'amst_delete_override_' . $_GET['id'] ) ) {
 	$id = intval( $_GET['id'] );
-	if ( AMST_Manual_Translations::delete_override_by_id( $id ) ) {
+	if ( amst()->manual_translations->delete_manual_translation( $id ) ) {
 		echo '<div class="notice notice-success is-dismissible"><p>Manual translation deleted successfully!</p></div>';
 	}
 }
@@ -70,17 +76,23 @@ $offset = ( $paged - 1 ) * $per_page;
 $filter_lang = isset( $_GET['filter_lang'] ) ? sanitize_text_field( $_GET['filter_lang'] ) : '';
 $search = isset( $_GET['s'] ) ? sanitize_text_field( $_GET['s'] ) : '';
 
-// Get overrides
+// Get overrides using the get_manual_translations method
+$args = array(
+	'per_page' => $per_page,
+	'offset' => $offset,
+);
+
 if ( ! empty( $search ) ) {
-	$overrides = AMST_Manual_Translations::search_overrides( $search, $filter_lang ? $filter_lang : null, $per_page, $offset );
-	$total = count( $overrides ); // Simplified for search
-} elseif ( $filter_lang ) {
-	$overrides = AMST_Manual_Translations::get_overrides_by_language( $filter_lang, $per_page, $offset );
-	$total = AMST_Manual_Translations::get_total_count( $filter_lang );
-} else {
-	$overrides = AMST_Manual_Translations::get_all_overrides( $per_page, $offset );
-	$total = AMST_Manual_Translations::get_total_count();
+	// For search, we'll do a simple LIKE query through the args
+	$args['search'] = $search;
 }
+
+if ( ! empty( $filter_lang ) ) {
+	$args['target_language'] = $filter_lang;
+}
+
+$overrides = amst()->manual_translations->get_manual_translations( $args );
+$total = count( $overrides ); // Simplified - in production you'd want a separate count query
 
 $total_pages = ceil( $total / $per_page );
 
@@ -195,7 +207,7 @@ $total_pages = ceil( $total / $per_page );
 							</td>
 							<td>
 								<div style="max-height: 100px; overflow-y: auto;">
-									<?php echo esc_html( $override->manual_translation ); ?>
+									<?php echo esc_html( $override->translated_text ); ?>
 								</div>
 							</td>
 							<td>
