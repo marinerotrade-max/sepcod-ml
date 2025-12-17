@@ -151,8 +151,8 @@ class AMST_Language_Switcher {
 				<span class="amst-dropdown-arrow">▼</span>
 			</button>
 			
-			<?php if ( ! $has_selected ) : // Only render modal if user hasn't seen it yet ?>
-			<div class="amst-modal-overlay" style="display: none;">
+			<!-- Always render modal, JS will handle auto-show behavior -->
+			<div class="amst-modal-overlay" style="display: none;" data-auto-show="<?php echo $has_selected ? 'no' : 'yes'; ?>">
 				<div class="amst-modal-content">
 					<div class="amst-modal-header">
 						<h3><?php echo esc_html( get_option( 'amst_switcher_modal_title', __( 'Select Language', 'auto-multilingual-seo' ) ) ); ?></h3>
@@ -178,7 +178,6 @@ class AMST_Language_Switcher {
 					</div>
 				</div>
 			</div>
-			<?php endif; // End modal rendering condition ?>
 		</div>
 		<?php
 	}

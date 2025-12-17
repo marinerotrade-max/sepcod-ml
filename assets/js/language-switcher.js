@@ -30,20 +30,24 @@
     
     // Main initialization
     $(document).ready(function() {
-        var hasSeenModal = getCookie('amst_language_selected') === 'yes';
-        
-        // If user already interacted, hide modal completely
-        if (hasSeenModal) {
-            $('.amst-modal-overlay').each(function() {
-                $(this).remove(); // Don't just hide - REMOVE it
-            });
-        }
-        
         // Setup all event handlers
         setupModalHandlers();
         setupDropdownHandlers();
         setupLanguageSelection();
         applyFixedPosition();
+        
+        // Show modal automatically on first visit only
+        $('.amst-modal-overlay').each(function() {
+            var autoShow = $(this).data('auto-show');
+            if (autoShow === 'yes') {
+                // First visit - show modal automatically after a short delay
+                var $modal = $(this);
+                setTimeout(function() {
+                    $modal.fadeIn(300);
+                    $('body').css('overflow', 'hidden');
+                }, 500);
+            }
+        });
     });
     
     // Modal handlers
@@ -109,11 +113,11 @@
             
             var href = $(this).attr('href');
             
-            // Set cookie immediately
+            // Set cookie to prevent auto-show
             setCookie('amst_language_selected', 'yes', 365);
             
             // Hide everything immediately
-            $('.amst-modal-overlay').hide().remove();
+            $('.amst-modal-overlay').hide().attr('data-auto-show', 'no');
             $('.amst-dropdown-menu').hide();
             $('body').css('overflow', '');
             
@@ -126,13 +130,11 @@
     
     // Close modal function
     function closeModal() {
-        // Set cookie so it never shows again
+        // Set cookie so it doesn't auto-show again
         setCookie('amst_language_selected', 'yes', 365);
         
-        // Remove modal from DOM completely
-        $('.amst-modal-overlay').fadeOut(200, function() {
-            $(this).remove();
-        });
+        // Hide modal (but keep in DOM so it can be opened manually)
+        $('.amst-modal-overlay').fadeOut(200).attr('data-auto-show', 'no');
         
         // Restore body scroll
         $('body').css('overflow', '');
