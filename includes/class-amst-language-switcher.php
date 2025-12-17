@@ -408,22 +408,23 @@ class AMST_Language_Switcher {
 			$path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '/';
 			$path = trim( $path, '/' );
 			
-			// Check if path already has language prefix
+			// Check if path already has language prefix and remove it
 			$enabled_languages = $language_detector->get_enabled_languages();
 			$path_segments = empty( $path ) ? array() : explode( '/', $path );
 			
-			$has_lang_prefix = false;
+			// Remove any existing language prefix (could be different language)
 			if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
-				// Already has a language prefix, skip
-				continue;
+				// Remove the existing language prefix
+				array_shift( $path_segments );
+				$path = implode( '/', $path_segments );
 			}
 			
-			// Build new URL with language prefix
+			// Build new URL with current language prefix
 			if ( empty( $path ) ) {
-				// Home link: add language prefix
+				// Home link: add current language prefix
 				$new_path = '/' . $current_lang . '/';
 			} else {
-				// Other links: prepend language prefix
+				// Other links: prepend current language prefix
 				$new_path = '/' . $current_lang . '/' . $path . '/';
 			}
 			
