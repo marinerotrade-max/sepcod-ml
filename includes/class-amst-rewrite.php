@@ -59,26 +59,34 @@ class AMST_Rewrite {
             // Add rewrite tag
             add_rewrite_tag( '%lang%', '([^/]+)' );
             
-            // Rule for language prefix with any path
+            // CRITICAL: Rule for language prefix only (homepage) - MUST BE FIRST
+            // This ensures /de/, /fr/, etc. load the homepage in that language
+            add_rewrite_rule(
+                '^(' . $lang . ')/?$',
+                'index.php?lang=$matches[1]&is_homepage=1',
+                'top'
+            );
+            
+            // Rule for language prefix with page slug (e.g., /de/about/)
+            add_rewrite_rule(
+                '^(' . $lang . ')/([^/]+)/?$',
+                'index.php?lang=$matches[1]&pagename=$matches[2]',
+                'top'
+            );
+            
+            // Rule for language prefix with deeper paths (e.g., /de/category/post/)
             add_rewrite_rule(
                 '^(' . $lang . ')/(.+?)/?$',
                 'index.php?lang=$matches[1]&pagename=$matches[2]',
                 'top'
             );
-            
-            // Rule for language prefix only (homepage)
-            add_rewrite_rule(
-                '^(' . $lang . ')/?$',
-                'index.php?lang=$matches[1]',
-                'top'
-            );
-            
-            // Rule for language prefix with post name
-            add_rewrite_rule(
-                '^(' . $lang . ')/([^/]+)/?$',
-                'index.php?lang=$matches[1]&name=$matches[2]',
-                'top'
-            );
+        }
+        
+        // Check if we need to flush rewrite rules
+        $rewrite_version = get_option( 'amst_rewrite_version', '0' );
+        if ( version_compare( $rewrite_version, AMST_VERSION, '<' ) ) {
+            flush_rewrite_rules();
+            update_option( 'amst_rewrite_version', AMST_VERSION );
         }
     }
     
@@ -90,6 +98,7 @@ class AMST_Rewrite {
      */
     public function add_query_vars( $vars ) {
         $vars[] = 'lang';
+        $vars[] = 'is_homepage';
         return $vars;
     }
     

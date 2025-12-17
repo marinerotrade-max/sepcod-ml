@@ -239,7 +239,13 @@ class AMST_Language_Switcher {
 	 * @return bool True if homepage.
 	 */
 	private function is_homepage() {
-		// Method 1: Check WordPress query vars
+		// Method 1: Check our custom query var (set by rewrite rules for /de/, /fr/, etc.)
+		$is_homepage_var = get_query_var( 'is_homepage' );
+		if ( ! empty( $is_homepage_var ) ) {
+			return true;
+		}
+		
+		// Method 2: Check WordPress query vars
 		global $wp_query;
 		if ( isset( $wp_query ) ) {
 			// Check if this is the main query without any specific page vars
@@ -247,18 +253,19 @@ class AMST_Language_Switcher {
 			     empty( $wp_query->query_vars['page_id'] ) && 
 			     empty( $wp_query->query_vars['name'] ) &&
 			     empty( $wp_query->query_vars['category_name'] ) &&
-			     empty( $wp_query->query_vars['tag'] ) ) {
+			     empty( $wp_query->query_vars['tag'] ) &&
+			     empty( $wp_query->query_vars['post_type'] ) ) {
 				return true;
 			}
 		}
 		
-		// Method 2: Check URL path
+		// Method 3: Check URL path
 		global $wp;
 		if ( isset( $wp->request ) && ( empty( $wp->request ) || $wp->request === '' ) ) {
 			return true;
 		}
 		
-		// Method 3: Check request URI
+		// Method 4: Check request URI
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$request_uri = trim( $request_uri, '/' );
 		
@@ -276,7 +283,7 @@ class AMST_Language_Switcher {
 			return true;
 		}
 		
-		// Method 4: WordPress conditionals (least reliable, use as last resort)
+		// Method 5: WordPress conditionals (least reliable, use as last resort)
 		if ( is_front_page() || is_home() ) {
 			return true;
 		}
