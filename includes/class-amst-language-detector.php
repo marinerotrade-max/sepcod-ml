@@ -49,16 +49,31 @@ class AMST_Language_Detector {
         $potential_lang = isset( $path_parts[0] ) ? $path_parts[0] : '';
         
         if ( ! empty( $potential_lang ) && in_array( $potential_lang, $enabled_languages, true ) ) {
+            // Language prefix found in URL - this takes highest priority
             $this->current_language = $potential_lang;
             // Store language choice in cookie for persistence
             $this->set_language_cookie( $potential_lang );
         } else {
+            // No language prefix in URL
             // Check if user has a language preference cookie
             $cookie_lang = $this->get_language_cookie();
-            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) ) {
+            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) && $cookie_lang !== $default_lang ) {
+                // User has a saved preference for a non-default language
+                // Redirect to the language-prefixed URL to maintain consistency
+                $current_url = $this->get_current_url();
+                $lang_url = $this->get_language_url( $current_url, $cookie_lang );
+                if ( $current_url !== $lang_url ) {
+                    wp_safe_redirect( $lang_url );
+                    exit;
+                }
                 $this->current_language = $cookie_lang;
             } else {
+                // No cookie or cookie is for default language - use default
                 $this->current_language = $default_lang;
+                // Clear cookie if it was set to default language
+                if ( $cookie_lang === $default_lang ) {
+                    $this->clear_language_cookie();
+                }
             }
         }
         
@@ -84,6 +99,15 @@ class AMST_Language_Detector {
      */
     private function get_language_cookie() {
         return isset( $_COOKIE['amst_language'] ) ? sanitize_text_field( wp_unslash( $_COOKIE['amst_language'] ) ) : null;
+    }
+    
+    /**
+     * Clear language preference cookie.
+     */
+    private function clear_language_cookie() {
+        if ( ! headers_sent() ) {
+            setcookie( 'amst_language', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+        }
     }
     
     /**

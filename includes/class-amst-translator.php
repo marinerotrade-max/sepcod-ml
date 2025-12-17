@@ -242,25 +242,13 @@ class AMST_Translator {
     }
     
     /**
-     * Get supported languages.
+     * Get supported languages (EU countries only).
      *
      * @return array Supported languages.
      */
     public function get_supported_languages() {
         return array(
-            'af' => __( 'Afrikaans', 'auto-multilingual-seo' ),
-            'sq' => __( 'Albanian', 'auto-multilingual-seo' ),
-            'ar' => __( 'Arabic', 'auto-multilingual-seo' ),
-            'hy' => __( 'Armenian', 'auto-multilingual-seo' ),
-            'az' => __( 'Azerbaijani', 'auto-multilingual-seo' ),
-            'eu' => __( 'Basque', 'auto-multilingual-seo' ),
-            'be' => __( 'Belarusian', 'auto-multilingual-seo' ),
-            'bn' => __( 'Bengali', 'auto-multilingual-seo' ),
-            'bs' => __( 'Bosnian', 'auto-multilingual-seo' ),
             'bg' => __( 'Bulgarian', 'auto-multilingual-seo' ),
-            'ca' => __( 'Catalan', 'auto-multilingual-seo' ),
-            'zh' => __( 'Chinese (Simplified)', 'auto-multilingual-seo' ),
-            'zh-TW' => __( 'Chinese (Traditional)', 'auto-multilingual-seo' ),
             'hr' => __( 'Croatian', 'auto-multilingual-seo' ),
             'cs' => __( 'Czech', 'auto-multilingual-seo' ),
             'da' => __( 'Danish', 'auto-multilingual-seo' ),
@@ -271,41 +259,19 @@ class AMST_Translator {
             'fr' => __( 'French', 'auto-multilingual-seo' ),
             'de' => __( 'German', 'auto-multilingual-seo' ),
             'el' => __( 'Greek', 'auto-multilingual-seo' ),
-            'gu' => __( 'Gujarati', 'auto-multilingual-seo' ),
-            'he' => __( 'Hebrew', 'auto-multilingual-seo' ),
-            'hi' => __( 'Hindi', 'auto-multilingual-seo' ),
             'hu' => __( 'Hungarian', 'auto-multilingual-seo' ),
-            'is' => __( 'Icelandic', 'auto-multilingual-seo' ),
-            'id' => __( 'Indonesian', 'auto-multilingual-seo' ),
+            'ga' => __( 'Irish', 'auto-multilingual-seo' ),
             'it' => __( 'Italian', 'auto-multilingual-seo' ),
-            'ja' => __( 'Japanese', 'auto-multilingual-seo' ),
-            'kn' => __( 'Kannada', 'auto-multilingual-seo' ),
-            'ko' => __( 'Korean', 'auto-multilingual-seo' ),
             'lv' => __( 'Latvian', 'auto-multilingual-seo' ),
             'lt' => __( 'Lithuanian', 'auto-multilingual-seo' ),
-            'mk' => __( 'Macedonian', 'auto-multilingual-seo' ),
-            'ms' => __( 'Malay', 'auto-multilingual-seo' ),
             'mt' => __( 'Maltese', 'auto-multilingual-seo' ),
-            'no' => __( 'Norwegian', 'auto-multilingual-seo' ),
-            'fa' => __( 'Persian', 'auto-multilingual-seo' ),
             'pl' => __( 'Polish', 'auto-multilingual-seo' ),
             'pt' => __( 'Portuguese', 'auto-multilingual-seo' ),
             'ro' => __( 'Romanian', 'auto-multilingual-seo' ),
-            'ru' => __( 'Russian', 'auto-multilingual-seo' ),
-            'sr' => __( 'Serbian', 'auto-multilingual-seo' ),
             'sk' => __( 'Slovak', 'auto-multilingual-seo' ),
             'sl' => __( 'Slovenian', 'auto-multilingual-seo' ),
             'es' => __( 'Spanish', 'auto-multilingual-seo' ),
-            'sw' => __( 'Swahili', 'auto-multilingual-seo' ),
             'sv' => __( 'Swedish', 'auto-multilingual-seo' ),
-            'ta' => __( 'Tamil', 'auto-multilingual-seo' ),
-            'te' => __( 'Telugu', 'auto-multilingual-seo' ),
-            'th' => __( 'Thai', 'auto-multilingual-seo' ),
-            'tr' => __( 'Turkish', 'auto-multilingual-seo' ),
-            'uk' => __( 'Ukrainian', 'auto-multilingual-seo' ),
-            'ur' => __( 'Urdu', 'auto-multilingual-seo' ),
-            'vi' => __( 'Vietnamese', 'auto-multilingual-seo' ),
-            'cy' => __( 'Welsh', 'auto-multilingual-seo' ),
         );
     }
 }
