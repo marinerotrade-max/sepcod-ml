@@ -16,6 +16,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class AMST_Language_Switcher {
 	
 	/**
+	 * Flag to prevent infinite recursion in filters.
+	 *
+	 * @var bool
+	 */
+	private $in_filter = false;
+	
+	/**
 	 * Flag icons mapping for EU languages.
 	 *
 	 * @var array
@@ -431,10 +438,18 @@ class AMST_Language_Switcher {
 	 * @return string Modified URL with language prefix.
 	 */
 	public function add_language_to_link( $url, $post_id = 0 ) {
+		// Prevent infinite recursion
+		if ( $this->in_filter ) {
+			return $url;
+		}
+		
 		// Don't modify in admin area
 		if ( is_admin() ) {
 			return $url;
 		}
+		
+		// Set flag to prevent recursion
+		$this->in_filter = true;
 		
 		// Get current language
 		$language_detector = amst()->language_detector;
@@ -443,20 +458,25 @@ class AMST_Language_Switcher {
 		
 		// Only modify if we're not in default language
 		if ( $current_lang === $default_lang ) {
+			$this->in_filter = false;
 			return $url;
 		}
 		
-		// Get home URL for comparison
+		// Get home URL for comparison (remove filter temporarily)
+		remove_filter( 'home_url', array( $this, 'add_language_to_home_url' ), 10 );
 		$home_url = untrailingslashit( home_url( '/' ) );
+		add_filter( 'home_url', array( $this, 'add_language_to_home_url' ), 10, 4 );
 		
 		// Check if this URL belongs to our site (not external)
 		if ( strpos( $url, $home_url ) !== 0 ) {
 			// External link or different domain - don't modify
+			$this->in_filter = false;
 			return $url;
 		}
 		
 		// Don't modify mailto, tel, or other special URLs
 		if ( preg_match( '#^(mailto:|tel:|ftp:|file:|javascript:)#i', $url ) ) {
+			$this->in_filter = false;
 			return $url;
 		}
 		
@@ -483,6 +503,7 @@ class AMST_Language_Switcher {
 		// Check if path already has a language prefix
 		if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
 			// Already has a language prefix - don't add another one (prevent stacking)
+			$this->in_filter = false;
 			return $url;
 		}
 		
@@ -500,6 +521,9 @@ class AMST_Language_Switcher {
 		if ( ! empty( $fragment ) ) {
 			$new_url .= '#' . $fragment;
 		}
+		
+		// Reset flag before returning
+		$this->in_filter = false;
 		
 		return $new_url;
 	}
@@ -536,6 +560,11 @@ class AMST_Language_Switcher {
 	 * @return string Modified URL with language prefix.
 	 */
 	public function add_language_to_home_url( $url, $path = '', $orig_scheme = null, $blog_id = null ) {
+		// Prevent infinite recursion
+		if ( $this->in_filter ) {
+			return $url;
+		}
+		
 		// Don't modify in admin area
 		if ( is_admin() ) {
 			return $url;
@@ -554,19 +583,26 @@ class AMST_Language_Switcher {
 		// Only modify if path is empty or just '/' (the actual home URL)
 		// Don't modify if there's already a path (like /contact)
 		if ( empty( $path ) || $path === '/' ) {
-			// Get base home URL
+			// Set flag to prevent recursion
+			$this->in_filter = true;
+			
+			// Get base home URL (temporarily remove filter)
+			remove_filter( 'home_url', array( $this, 'add_language_to_home_url' ), 10 );
 			$home_url = untrailingslashit( home_url( '/', $orig_scheme ) );
+			add_filter( 'home_url', array( $this, 'add_language_to_home_url' ), 10, 4 );
 			
 			// Check if URL already has language prefix
 			$enabled_languages = $language_detector->get_enabled_languages();
 			foreach ( $enabled_languages as $lang ) {
 				if ( strpos( $url, $home_url . '/' . $lang ) === 0 ) {
 					// Already has a language prefix
+					$this->in_filter = false;
 					return $url;
 				}
 			}
 			
 			// Add language prefix to home URL
+			$this->in_filter = false;
 			return trailingslashit( $home_url . '/' . $current_lang );
 		}
 		
