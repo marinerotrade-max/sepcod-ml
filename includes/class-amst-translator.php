@@ -39,7 +39,7 @@ class AMST_Translator {
     }
     
     /**
-     * Translate text.
+     * Translate text with priority: manual > automatic > fallback.
      *
      * @param string $text Text to translate.
      * @param string $target_lang Target language.
@@ -60,16 +60,23 @@ class AMST_Translator {
         // Generate content hash.
         $content_hash = $this->generate_content_hash( $text );
         
-        // Try to get from cache.
-        $cached = $this->cache->get_translation( $content_hash, $source_lang, $target_lang );
-        if ( false !== $cached ) {
-            return $cached;
+        // PRIORITY 1: Check for manual translation in database
+        $manual_translation = $this->cache->get_translation( $content_hash, $source_lang, $target_lang );
+        if ( false !== $manual_translation ) {
+            return $manual_translation;
         }
         
-        // Get API key.
+        // PRIORITY 2: Check for automatic translation in transient (temporary cache)
+        $automatic_translation = $this->cache->get_automatic_translation( $content_hash, $source_lang, $target_lang );
+        if ( false !== $automatic_translation ) {
+            return $automatic_translation;
+        }
+        
+        // PRIORITY 3: Generate new automatic translation (do NOT persist to database)
         $api_key = get_option( 'amst_api_key', '' );
         if ( empty( $api_key ) ) {
-            return new WP_Error( 'no_api_key', __( 'Google Cloud Translation API key is not configured.', 'auto-multilingual-seo' ) );
+            // Fallback to original text if API key not configured
+            return $text;
         }
         
         // Prepare request.
@@ -94,17 +101,15 @@ class AMST_Translator {
             )
         );
         
-        // Check for errors.
+        // Check for errors - fallback to original text on error
         if ( is_wp_error( $response ) ) {
-            return $response;
+            return $text;
         }
         
         $status_code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== $status_code ) {
-            $body = wp_remote_retrieve_body( $response );
-            $error_data = json_decode( $body, true );
-            $error_message = isset( $error_data['error']['message'] ) ? $error_data['error']['message'] : __( 'Translation API error', 'auto-multilingual-seo' );
-            return new WP_Error( 'api_error', $error_message, array( 'status' => $status_code ) );
+            // Fallback to original text on API error
+            return $text;
         }
         
         // Parse response.
@@ -112,13 +117,15 @@ class AMST_Translator {
         $data = json_decode( $body, true );
         
         if ( ! isset( $data['data']['translations'][0]['translatedText'] ) ) {
-            return new WP_Error( 'invalid_response', __( 'Invalid API response', 'auto-multilingual-seo' ) );
+            // Fallback to original text on invalid response
+            return $text;
         }
         
         $translated_text = $data['data']['translations'][0]['translatedText'];
         
-        // Save to cache.
-        $this->cache->save_translation( $content_hash, $source_lang, $target_lang, $text, $translated_text );
+        // Save to transient ONLY (temporary cache, NOT database)
+        // Automatic translations expire after 1 hour
+        $this->cache->save_automatic_translation( $content_hash, $source_lang, $target_lang, $translated_text, 3600 );
         
         return $translated_text;
     }

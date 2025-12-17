@@ -36,6 +36,8 @@ require_once AMST_PLUGIN_DIR . 'includes/class-amst-sitemap.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-integrations.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-content-processor.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-shortcodes.php';
+require_once AMST_PLUGIN_DIR . 'includes/class-amst-manual-translations.php';
+require_once AMST_PLUGIN_DIR . 'includes/class-amst-comprehensive-filters.php';
 require_once AMST_PLUGIN_DIR . 'admin/class-amst-admin.php';
 
 /**
@@ -150,6 +152,20 @@ class Auto_Multilingual_SEO_Translator {
     }
     
     /**
+     * Manual translations handler.
+     *
+     * @var AMST_Manual_Translations
+     */
+    public $manual_translations;
+    
+    /**
+     * Comprehensive filters handler.
+     *
+     * @var AMST_Comprehensive_Filters
+     */
+    public $comprehensive_filters;
+    
+    /**
      * Initialize components.
      */
     private function init_components() {
@@ -162,6 +178,8 @@ class Auto_Multilingual_SEO_Translator {
         $this->sitemap = new AMST_Sitemap( $this->language_detector );
         $this->integrations = new AMST_Integrations();
         $this->content_processor = new AMST_Content_Processor( $this->translator, $this->language_detector, $this->cache );
+        $this->manual_translations = new AMST_Manual_Translations( $this->cache, $this->database );
+        $this->comprehensive_filters = new AMST_Comprehensive_Filters( $this->language_detector, $this->content_processor );
         
         if ( is_admin() ) {
             $this->admin = new AMST_Admin();
