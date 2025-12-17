@@ -74,6 +74,23 @@
             // Show loading state
             $(this).closest('.amst-language-switcher').addClass('loading');
             
+            // Close modal immediately before navigation
+            var $switcher = $(this).closest('.amst-language-switcher');
+            var $overlay = $switcher.find('.amst-modal-overlay');
+            
+            if ($overlay.length && $overlay.is(':visible')) {
+                $overlay.hide();
+                $switcher.find('.amst-current-language').removeClass('active');
+                $('body').css('overflow', '');
+            }
+            
+            // Close dropdown if present
+            var $dropdown = $switcher.find('.amst-dropdown-menu');
+            if ($dropdown.length && $dropdown.is(':visible')) {
+                $dropdown.hide();
+                $switcher.find('.amst-current-language').removeClass('active');
+            }
+            
             // Allow default behavior (link navigation)
             // The page will reload with the new language
         });
