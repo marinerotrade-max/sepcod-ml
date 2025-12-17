@@ -81,28 +81,33 @@
             // Show loading state
             $this.closest('.amst-language-switcher').addClass('loading');
             
-            // Close modal immediately before navigation
+            // Close modal COMPLETELY before navigation
             var $switcher = $this.closest('.amst-language-switcher');
             var $overlay = $switcher.find('.amst-modal-overlay');
             
-            if ($overlay.length && $overlay.is(':visible')) {
-                $overlay.css('display', 'none');
-                $switcher.find('.amst-current-language').removeClass('active');
-                $('body').css('overflow', '');
+            // Forcefully hide and remove all modal elements
+            if ($overlay.length) {
+                $overlay.hide();
+                $overlay.css({'display': 'none', 'visibility': 'hidden', 'opacity': '0'});
+                $overlay.remove(); // Completely remove modal from DOM
             }
             
             // Close dropdown if present
             var $dropdown = $switcher.find('.amst-dropdown-menu');
-            if ($dropdown.length && $dropdown.is(':visible')) {
+            if ($dropdown.length) {
+                $dropdown.hide();
                 $dropdown.css('display', 'none');
-                $switcher.find('.amst-current-language').removeClass('active');
             }
             
-            // Navigate to the language URL after a tiny delay to ensure modal is closed
-            // This ensures compatibility across all browsers
-            setTimeout(function() {
-                window.location.href = href;
-            }, 50);
+            // Remove all active classes
+            $switcher.find('.amst-current-language').removeClass('active');
+            $('.amst-language-switcher').removeClass('active');
+            
+            // Restore body scroll
+            $('body').css('overflow', '').css('overflow-y', '');
+            
+            // Navigate immediately - no delay needed since we removed the modal from DOM
+            window.location.href = href;
         });
         
         // Keyboard navigation for modal
