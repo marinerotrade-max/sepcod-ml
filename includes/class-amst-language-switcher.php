@@ -138,6 +138,9 @@ class AMST_Language_Switcher {
 		$current_flag = isset( $this->flag_icons[ $current_lang ] ) ? $this->flag_icons[ $current_lang ] : '🌐';
 		$current_name = isset( $supported_languages[ $current_lang ] ) ? $supported_languages[ $current_lang ] : $current_lang;
 		
+		// Check if user has already interacted with the language switcher
+		$has_selected = isset( $_COOKIE['amst_language_selected'] ) && $_COOKIE['amst_language_selected'] === 'yes';
+		
 		?>
 		<div class="amst-language-switcher amst-modal-style <?php echo esc_attr( $flag_size_class ); ?>">
 			<button class="amst-current-language" aria-label="<?php esc_attr_e( 'Select Language', 'auto-multilingual-seo' ); ?>">
@@ -148,6 +151,7 @@ class AMST_Language_Switcher {
 				<span class="amst-dropdown-arrow">▼</span>
 			</button>
 			
+			<?php if ( ! $has_selected ) : // Only render modal if user hasn't seen it yet ?>
 			<div class="amst-modal-overlay" style="display: none;">
 				<div class="amst-modal-content">
 					<div class="amst-modal-header">
@@ -174,6 +178,7 @@ class AMST_Language_Switcher {
 					</div>
 				</div>
 			</div>
+			<?php endif; // End modal rendering condition ?>
 		</div>
 		<?php
 	}
