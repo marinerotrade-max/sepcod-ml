@@ -130,10 +130,11 @@ class AMST_Language_Detector {
     /**
      * Get default language.
      *
-     * @return string Default language code.
+     * @return string Default language code (always 'en' - English).
      */
     public function get_default_language() {
-        return get_option( 'amst_default_language', 'en' );
+        // ENFORCED: Default language is always English, ignore database setting
+        return 'en';
     }
     
     /**
