@@ -160,9 +160,25 @@ class AMST_Language_Switcher {
 		// Get home URL
 		$home_url = home_url( '/' );
 		
+		// Check if we're on homepage using multiple detection methods
+		$is_homepage = $this->is_homepage();
+		
 		// Special handling for homepage/front page
-		if ( is_front_page() || is_home() ) {
-			// We're on homepage/front page
+		if ( $is_homepage ) {
+			// Check if manual homepage URL is configured
+			$homepage_urls = get_option( 'amst_homepage_urls', array() );
+			if ( ! empty( $homepage_urls[ $lang ] ) ) {
+				// Use manually configured homepage URL
+				$url_template = $homepage_urls[ $lang ];
+				$url = str_replace( 
+					array( '{home}', '{lang}' ), 
+					array( rtrim( $home_url, '/' ), $lang ), 
+					$url_template 
+				);
+				return trailingslashit( $url );
+			}
+			
+			// Fallback to automatic generation
 			if ( $lang === $default_lang ) {
 				// Default language - just home URL
 				return $home_url;
@@ -215,6 +231,57 @@ class AMST_Language_Switcher {
 		}
 		
 		return $new_url;
+	}
+	
+	/**
+	 * Detect if current page is homepage using multiple methods.
+	 *
+	 * @return bool True if homepage.
+	 */
+	private function is_homepage() {
+		// Method 1: Check WordPress query vars
+		global $wp_query;
+		if ( isset( $wp_query ) ) {
+			// Check if this is the main query without any specific page vars
+			if ( empty( $wp_query->query_vars['pagename'] ) && 
+			     empty( $wp_query->query_vars['page_id'] ) && 
+			     empty( $wp_query->query_vars['name'] ) &&
+			     empty( $wp_query->query_vars['category_name'] ) &&
+			     empty( $wp_query->query_vars['tag'] ) ) {
+				return true;
+			}
+		}
+		
+		// Method 2: Check URL path
+		global $wp;
+		if ( isset( $wp->request ) && ( empty( $wp->request ) || $wp->request === '' ) ) {
+			return true;
+		}
+		
+		// Method 3: Check request URI
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$request_uri = trim( $request_uri, '/' );
+		
+		// Remove language prefix if present
+		$language_detector = amst()->language_detector;
+		$enabled_languages = $language_detector->get_enabled_languages();
+		$path_parts = explode( '/', $request_uri );
+		if ( ! empty( $path_parts[0] ) && in_array( $path_parts[0], $enabled_languages, true ) ) {
+			array_shift( $path_parts );
+			$request_uri = implode( '/', $path_parts );
+		}
+		
+		// If path is empty or just has query string, it's homepage
+		if ( empty( $request_uri ) || strpos( $request_uri, '?' ) === 0 ) {
+			return true;
+		}
+		
+		// Method 4: WordPress conditionals (least reliable, use as last resort)
+		if ( is_front_page() || is_home() ) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**

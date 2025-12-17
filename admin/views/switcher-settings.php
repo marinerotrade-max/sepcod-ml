@@ -18,6 +18,15 @@ if ( isset( $_POST['amst_switcher_settings_nonce'] ) && wp_verify_nonce( sanitiz
 	update_option( 'amst_switcher_position', sanitize_text_field( wp_unslash( $_POST['amst_switcher_position'] ?? 'inline' ) ) );
 	update_option( 'amst_switcher_modal_title', sanitize_text_field( wp_unslash( $_POST['amst_switcher_modal_title'] ?? __( 'Select Language', 'auto-multilingual-seo' ) ) ) );
 	
+	// Save homepage URLs
+	if ( isset( $_POST['amst_homepage_urls'] ) && is_array( $_POST['amst_homepage_urls'] ) ) {
+		$homepage_urls = array();
+		foreach ( $_POST['amst_homepage_urls'] as $lang => $url ) {
+			$homepage_urls[ sanitize_text_field( $lang ) ] = sanitize_text_field( $url );
+		}
+		update_option( 'amst_homepage_urls', $homepage_urls );
+	}
+	
 	echo '<div class="notice notice-success"><p>' . esc_html__( 'Language switcher settings saved successfully!', 'auto-multilingual-seo' ) . '</p></div>';
 }
 
@@ -102,6 +111,63 @@ $modal_title = get_option( 'amst_switcher_modal_title', __( 'Select Language', '
 				
 
 			</table>
+			
+			<h2><?php esc_html_e( 'Homepage URL Configuration (Optional)', 'auto-multilingual-seo' ); ?></h2>
+			<p class="description" style="margin-bottom: 20px;">
+				<?php esc_html_e( 'Manually specify homepage URLs for each language. Use this if automatic detection fails. Variables: {home} = site URL, {lang} = language code.', 'auto-multilingual-seo' ); ?>
+			</p>
+			
+			<table class="form-table">
+				<?php
+				$homepage_urls = get_option( 'amst_homepage_urls', array() );
+				$language_detector = amst()->language_detector;
+				$enabled_languages = $language_detector->get_enabled_languages();
+				$default_lang = $language_detector->get_default_language();
+				$translator = amst()->translator;
+				$supported_languages = $translator->get_supported_languages();
+				
+				foreach ( $enabled_languages as $lang_code ) :
+					$lang_name = isset( $supported_languages[ $lang_code ] ) ? $supported_languages[ $lang_code ] : strtoupper( $lang_code );
+					$is_default = ( $lang_code === $default_lang );
+					$current_value = isset( $homepage_urls[ $lang_code ] ) ? $homepage_urls[ $lang_code ] : '';
+					$placeholder = $is_default ? '{home}/' : '{home}/' . $lang_code . '/';
+					?>
+					<tr>
+						<th scope="row">
+							<label for="amst_homepage_url_<?php echo esc_attr( $lang_code ); ?>">
+								<?php echo esc_html( $lang_name ); ?>
+								<?php if ( $is_default ) : ?>
+									<span style="color: #999;">(<?php esc_html_e( 'Default', 'auto-multilingual-seo' ); ?>)</span>
+								<?php endif; ?>
+							</label>
+						</th>
+						<td>
+							<input type="text" 
+							       name="amst_homepage_urls[<?php echo esc_attr( $lang_code ); ?>]" 
+							       id="amst_homepage_url_<?php echo esc_attr( $lang_code ); ?>" 
+							       value="<?php echo esc_attr( $current_value ); ?>" 
+							       placeholder="<?php echo esc_attr( $placeholder ); ?>" 
+							       class="regular-text" />
+							<p class="description">
+								<?php
+								/* translators: %s: language code */
+								printf( esc_html__( 'Example: %s (leave empty for automatic)', 'auto-multilingual-seo' ), '<code>' . esc_html( $placeholder ) . '</code>' );
+								?>
+							</p>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</table>
+			
+			<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+				<h4 style="margin-top: 0;"><?php esc_html_e( '💡 When to use manual configuration:', 'auto-multilingual-seo' ); ?></h4>
+				<ul style="margin-left: 20px;">
+					<li><?php esc_html_e( 'Automatic homepage detection is failing', 'auto-multilingual-seo' ); ?></li>
+					<li><?php esc_html_e( 'Switching languages on homepage redirects to blog', 'auto-multilingual-seo' ); ?></li>
+					<li><?php esc_html_e( 'You have a complex WordPress permalink structure', 'auto-multilingual-seo' ); ?></li>
+					<li><?php esc_html_e( 'You want to use custom homepage URLs per language', 'auto-multilingual-seo' ); ?></li>
+				</ul>
+			</div>
 			
 			<h2><?php esc_html_e( 'How to Use', 'auto-multilingual-seo' ); ?></h2>
 			<div class="amst-usage-instructions" style="background: #f5f5f5; padding: 20px; border-left: 4px solid #0073aa; margin: 20px 0;">
