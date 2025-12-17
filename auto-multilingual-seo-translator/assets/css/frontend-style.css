@@ -1,0 +1,150 @@
+/**
+ * Auto Multilingual SEO Translator - Frontend Styles
+ */
+
+/* Language Switcher Container */
+.amst-language-switcher {
+    display: inline-block;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Dropdown Style */
+.amst-language-switcher.amst-dropdown {
+    min-width: 150px;
+}
+
+.amst-language-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.amst-language-select:hover,
+.amst-language-select:focus {
+    border-color: #0073aa;
+    outline: none;
+}
+
+/* List Style */
+.amst-language-switcher.amst-list {
+    display: block;
+}
+
+.amst-language-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.amst-language-item {
+    margin: 5px 0;
+}
+
+.amst-language-link {
+    display: inline-block;
+    padding: 8px 12px;
+    color: #333;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.amst-language-link:hover {
+    background-color: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+    text-decoration: none;
+}
+
+.amst-language-item.active .amst-language-link {
+    background-color: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+    font-weight: bold;
+}
+
+/* Widget Styles */
+.widget_amst_language_switcher {
+    margin-bottom: 20px;
+}
+
+.widget_amst_language_switcher .widget-title {
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* RTL Support */
+.rtl .amst-language-switcher {
+    direction: rtl;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 768px) {
+    .amst-language-switcher.amst-dropdown {
+        width: 100%;
+    }
+    
+    .amst-language-select {
+        width: 100%;
+    }
+    
+    .amst-language-link {
+        display: block;
+        text-align: center;
+    }
+}
+
+/* Loading State */
+.amst-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.amst-loading::after {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #0073aa;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: amst-spin 0.6s linear infinite;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+@keyframes amst-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Accessibility */
+.amst-language-link:focus,
+.amst-language-select:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Flag Icons (if implemented) */
+.amst-flag {
+    display: inline-block;
+    width: 20px;
+    height: 15px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.rtl .amst-flag {
+    margin-right: 0;
+    margin-left: 8px;
+}
