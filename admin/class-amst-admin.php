@@ -69,6 +69,15 @@ class AMST_Admin {
         
         add_submenu_page(
             'amst-settings',
+            __( 'Manual Translations', 'auto-multilingual-seo' ),
+            __( 'Manual Translations', 'auto-multilingual-seo' ),
+            'manage_options',
+            'amst-manual-translations',
+            array( $this, 'render_manual_translations_page' )
+        );
+        
+        add_submenu_page(
+            'amst-settings',
             __( 'Statistics', 'auto-multilingual-seo' ),
             __( 'Statistics', 'auto-multilingual-seo' ),
             'manage_options',
@@ -209,6 +218,17 @@ class AMST_Admin {
         }
         
         include AMST_PLUGIN_DIR . 'admin/views/switcher-settings.php';
+    }
+    
+    /**
+     * Render manual translations page.
+     */
+    public function render_manual_translations_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        
+        include AMST_PLUGIN_DIR . 'admin/views/manual-translations.php';
     }
     
     /**
