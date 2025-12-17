@@ -43,12 +43,10 @@ $modal_title = get_option( 'amst_switcher_modal_title', __( 'Select Language', '
 					</th>
 					<td>
 						<select name="amst_switcher_style" id="amst_switcher_style" class="regular-text">
-							<option value="modal" <?php selected( $switcher_style, 'modal' ); ?>><?php esc_html_e( 'Modal Popup (Recommended)', 'auto-multilingual-seo' ); ?></option>
-							<option value="dropdown" <?php selected( $switcher_style, 'dropdown' ); ?>><?php esc_html_e( 'Dropdown Menu', 'auto-multilingual-seo' ); ?></option>
-							<option value="inline" <?php selected( $switcher_style, 'inline' ); ?>><?php esc_html_e( 'Inline List', 'auto-multilingual-seo' ); ?></option>
+							<option value="dropdown" <?php selected( $switcher_style, 'dropdown' ); ?>><?php esc_html_e( 'Simple Dropdown (Current - v1.3.0)', 'auto-multilingual-seo' ); ?></option>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Choose how the language switcher displays languages.', 'auto-multilingual-seo' ); ?>
+							<?php esc_html_e( 'Simple dropdown with native browser select element - reliable and works everywhere.', 'auto-multilingual-seo' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -102,17 +100,7 @@ $modal_title = get_option( 'amst_switcher_modal_title', __( 'Select Language', '
 					</td>
 				</tr>
 				
-				<tr>
-					<th scope="row">
-						<label for="amst_switcher_modal_title"><?php esc_html_e( 'Modal Title', 'auto-multilingual-seo' ); ?></label>
-					</th>
-					<td>
-						<input type="text" name="amst_switcher_modal_title" id="amst_switcher_modal_title" value="<?php echo esc_attr( $modal_title ); ?>" class="regular-text">
-						<p class="description">
-							<?php esc_html_e( 'Title shown at the top of the language selection modal.', 'auto-multilingual-seo' ); ?>
-						</p>
-					</td>
-				</tr>
+
 			</table>
 			
 			<h2><?php esc_html_e( 'How to Use', 'auto-multilingual-seo' ); ?></h2>
@@ -125,9 +113,13 @@ $modal_title = get_option( 'amst_switcher_modal_title', __( 'Select Language', '
 				<p><?php esc_html_e( 'Add to your theme files (e.g., header.php, footer.php):', 'auto-multilingual-seo' ); ?></p>
 				<code style="display: block; background: #fff; padding: 10px; margin: 10px 0;">&lt;?php if ( function_exists( 'amst' ) ) { echo do_shortcode( '[amst_language_switcher]' ); } ?&gt;</code>
 				
-				<h3 style="margin-top: 20px;"><?php esc_html_e( 'Custom Styles', 'auto-multilingual-seo' ); ?></h3>
-				<p><?php esc_html_e( 'Override styles with shortcode attributes:', 'auto-multilingual-seo' ); ?></p>
-				<code style="display: block; background: #fff; padding: 10px; margin: 10px 0;">[amst_language_switcher style="dropdown" show_names="yes" flag_size="large"]</code>
+				<h3 style="margin-top: 20px;"><?php esc_html_e( 'Custom Position', 'auto-multilingual-seo' ); ?></h3>
+				<p><?php esc_html_e( 'Override position with shortcode attribute:', 'auto-multilingual-seo' ); ?></p>
+				<code style="display: block; background: #fff; padding: 10px; margin: 10px 0;">[amst_language_switcher position="bottom-right"]</code>
+				
+				<h3 style="margin-top: 20px;"><?php esc_html_e( 'Show/Hide Names', 'auto-multilingual-seo' ); ?></h3>
+				<p><?php esc_html_e( 'Control language name display:', 'auto-multilingual-seo' ); ?></p>
+				<code style="display: block; background: #fff; padding: 10px; margin: 10px 0;">[amst_language_switcher show_names="yes"]</code>
 			</div>
 			
 			<h2><?php esc_html_e( 'Preview', 'auto-multilingual-seo' ); ?></h2>

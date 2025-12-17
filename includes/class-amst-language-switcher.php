@@ -95,6 +95,7 @@ class AMST_Language_Switcher {
 		$atts = shortcode_atts(
 			array(
 				'show_names' => get_option( 'amst_switcher_show_names', 'yes' ),
+				'position'   => get_option( 'amst_switcher_position', 'inline' ),
 			),
 			$atts,
 			'amst_language_switcher'
@@ -108,11 +109,18 @@ class AMST_Language_Switcher {
 		$supported_languages = $translator->get_supported_languages();
 		
 		$show_names = 'yes' === $atts['show_names'];
+		$position = $atts['position'];
+		
+		// Position class
+		$position_class = '';
+		if ( in_array( $position, array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' ), true ) ) {
+			$position_class = ' amst-fixed amst-position-' . esc_attr( $position );
+		}
 		
 		// Render simple dropdown switcher
 		ob_start();
 		?>
-		<div class="amst-language-switcher-simple">
+		<div class="amst-language-switcher-simple<?php echo esc_attr( $position_class ); ?>">
 			<select class="amst-language-dropdown" onchange="if(this.value) window.location.href=this.value;">
 				<?php foreach ( $enabled_languages as $lang_code ) : ?>
 					<?php
@@ -144,15 +152,43 @@ class AMST_Language_Switcher {
 	private function get_language_url( $lang ) {
 		$language_detector = amst()->language_detector;
 		$default_lang = $language_detector->get_default_language();
-		$current_url = $this->get_current_url();
+		$current_lang = $language_detector->get_current_language();
 		
-		if ( $lang === $default_lang ) {
-			// Remove language prefix for default language
-			return $language_detector->remove_language_prefix( $current_url );
-		} else {
-			// Add/change language prefix
-			return $language_detector->get_language_url( $current_url, $lang );
+		// Get home URL
+		$home_url = home_url( '/' );
+		
+		// Get current request path
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$path = wp_parse_url( $request_uri, PHP_URL_PATH );
+		$query = wp_parse_url( $request_uri, PHP_URL_QUERY );
+		
+		// Remove existing language prefix from path
+		$path = ltrim( $path, '/' );
+		$path_parts = explode( '/', $path );
+		
+		// Check if first part is a language code and remove it
+		if ( ! empty( $path_parts[0] ) && $language_detector->is_enabled_language( $path_parts[0] ) ) {
+			array_shift( $path_parts );
 		}
+		
+		// Rebuild path
+		$clean_path = implode( '/', $path_parts );
+		
+		// Build new URL
+		if ( $lang === $default_lang ) {
+			// For default language, no prefix
+			$new_url = trailingslashit( $home_url ) . $clean_path;
+		} else {
+			// For other languages, add prefix
+			$new_url = trailingslashit( $home_url ) . $lang . '/' . $clean_path;
+		}
+		
+		// Add query string if exists
+		if ( ! empty( $query ) ) {
+			$new_url .= '?' . $query;
+		}
+		
+		return $new_url;
 	}
 	
 	/**

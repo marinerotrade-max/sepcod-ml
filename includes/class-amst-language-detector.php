@@ -143,6 +143,17 @@ class AMST_Language_Detector {
     }
     
     /**
+     * Check if a language code is enabled.
+     *
+     * @param string $lang_code Language code to check.
+     * @return bool True if language is enabled.
+     */
+    public function is_enabled_language( $lang_code ) {
+        $enabled_languages = $this->get_enabled_languages();
+        return in_array( $lang_code, $enabled_languages, true );
+    }
+    
+    /**
      * Remove language prefix from URL.
      *
      * @param string $url URL.
