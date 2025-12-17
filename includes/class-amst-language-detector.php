@@ -157,6 +157,60 @@ class AMST_Language_Detector {
     }
     
     /**
+     * Remove language prefix from URL.
+     *
+     * @param string $url URL.
+     * @return string URL without language prefix.
+     */
+    public function remove_language_prefix( $url ) {
+        // Parse URL.
+        $parsed = wp_parse_url( $url );
+        $path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
+        
+        // Remove language prefix if exists.
+        $enabled_languages = $this->get_enabled_languages();
+        foreach ( $enabled_languages as $enabled_lang ) {
+            // Handle both "/lang/" and "/lang" at the end
+            if ( 0 === strpos( $path, '/' . $enabled_lang . '/' ) ) {
+                $path = substr( $path, strlen( '/' . $enabled_lang ) );
+                break;
+            } elseif ( '/' . $enabled_lang === $path ) {
+                $path = '/';
+                break;
+            }
+        }
+        
+        // Ensure path starts with slash
+        if ( empty( $path ) || '/' !== $path[0] ) {
+            $path = '/' . $path;
+        }
+        
+        // Clean up double slashes
+        $path = preg_replace( '#/+#', '/', $path );
+        
+        // Rebuild URL.
+        $new_url = '';
+        if ( isset( $parsed['scheme'] ) ) {
+            $new_url .= $parsed['scheme'] . '://';
+        }
+        if ( isset( $parsed['host'] ) ) {
+            $new_url .= $parsed['host'];
+        }
+        if ( isset( $parsed['port'] ) ) {
+            $new_url .= ':' . $parsed['port'];
+        }
+        $new_url .= $path;
+        if ( isset( $parsed['query'] ) ) {
+            $new_url .= '?' . $parsed['query'];
+        }
+        if ( isset( $parsed['fragment'] ) ) {
+            $new_url .= '#' . $parsed['fragment'];
+        }
+        
+        return $new_url;
+    }
+    
+    /**
      * Get URL for language.
      *
      * @param string $url URL.
