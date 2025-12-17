@@ -115,6 +115,9 @@ class AMST_Language_Switcher {
 		$position_class = '';
 		if ( in_array( $position, array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' ), true ) ) {
 			$position_class = ' amst-fixed amst-position-' . esc_attr( $position );
+		} elseif ( 'inline' !== $position ) {
+			// If not inline and not a recognized fixed position, default to inline
+			$position_class = '';
 		}
 		
 		// Render simple dropdown switcher
@@ -157,10 +160,33 @@ class AMST_Language_Switcher {
 		// Get home URL
 		$home_url = home_url( '/' );
 		
-		// Get current request path
-		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		$path = wp_parse_url( $request_uri, PHP_URL_PATH );
-		$query = wp_parse_url( $request_uri, PHP_URL_QUERY );
+		// Special handling for homepage/front page
+		if ( is_front_page() || is_home() ) {
+			// We're on homepage/front page
+			if ( $lang === $default_lang ) {
+				// Default language - just home URL
+				return $home_url;
+			} else {
+				// Other language - home URL with language prefix
+				return trailingslashit( $home_url ) . $lang . '/';
+			}
+		}
+		
+		// For all other pages, use current URL and modify it
+		global $wp;
+		$current_url = home_url( add_query_arg( array(), $wp->request ) );
+		
+		// Parse current URL
+		$parsed = wp_parse_url( $current_url );
+		$path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
+		$query = isset( $parsed['query'] ) ? $parsed['query'] : '';
+		
+		// Remove home path from current path to get relative path
+		$home_path = wp_parse_url( $home_url, PHP_URL_PATH );
+		if ( ! empty( $home_path ) && $home_path !== '/' ) {
+			$home_path = rtrim( $home_path, '/' );
+			$path = str_replace( $home_path, '', $path );
+		}
 		
 		// Remove existing language prefix from path
 		$path = ltrim( $path, '/' );

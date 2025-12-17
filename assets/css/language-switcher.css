@@ -353,29 +353,38 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
 }
 
+/* Fixed positioning - must have both amst-fixed and amst-position-XXX */
 .amst-language-switcher-simple.amst-fixed {
     position: fixed !important;
     z-index: 9999 !important;
 }
 
-.amst-language-switcher-simple.amst-position-bottom-right {
+.amst-language-switcher-simple.amst-fixed.amst-position-bottom-right {
     bottom: 20px !important;
     right: 20px !important;
+    left: auto !important;
+    top: auto !important;
 }
 
-.amst-language-switcher-simple.amst-position-bottom-left {
+.amst-language-switcher-simple.amst-fixed.amst-position-bottom-left {
     bottom: 20px !important;
     left: 20px !important;
+    right: auto !important;
+    top: auto !important;
 }
 
-.amst-language-switcher-simple.amst-position-top-right {
+.amst-language-switcher-simple.amst-fixed.amst-position-top-right {
     top: 20px !important;
     right: 20px !important;
+    left: auto !important;
+    bottom: auto !important;
 }
 
-.amst-language-switcher-simple.amst-position-top-left {
+.amst-language-switcher-simple.amst-fixed.amst-position-top-left {
     top: 20px !important;
     left: 20px !important;
+    right: auto !important;
+    bottom: auto !important;
 }
 
 .amst-language-dropdown {
@@ -415,23 +424,23 @@
         min-width: 120px !important;
     }
     
-    .amst-language-switcher-simple.amst-fixed {
+    /* Mobile fixed positioning - closer to edges */
+    .amst-language-switcher-simple.amst-fixed.amst-position-bottom-right {
         bottom: 15px !important;
         right: 15px !important;
+    }
+    
+    .amst-language-switcher-simple.amst-fixed.amst-position-bottom-left {
+        bottom: 15px !important;
         left: 15px !important;
     }
     
-    .amst-language-switcher-simple.amst-position-bottom-left {
-        left: 15px !important;
-        right: auto !important;
-    }
-    
-    .amst-language-switcher-simple.amst-position-top-right {
+    .amst-language-switcher-simple.amst-fixed.amst-position-top-right {
         top: 15px !important;
         right: 15px !important;
     }
     
-    .amst-language-switcher-simple.amst-position-top-left {
+    .amst-language-switcher-simple.amst-fixed.amst-position-top-left {
         top: 15px !important;
         left: 15px !important;
     }
