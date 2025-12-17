@@ -38,6 +38,7 @@
         // Close modal on close button click
         $('.amst-modal-close').on('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             closeModal($(this).closest('.amst-modal-overlay'));
         });
         
@@ -114,10 +115,13 @@
     }
     
     function closeModal($overlay) {
-        $overlay.fadeOut(300, function() {
-            $overlay.siblings('.amst-current-language').removeClass('active');
-            $('body').css('overflow', '');
-        });
+        if ($overlay && $overlay.length) {
+            $overlay.fadeOut(300, function() {
+                var $switcher = $overlay.closest('.amst-language-switcher');
+                $switcher.find('.amst-current-language').removeClass('active');
+                $('body').css('overflow', '');
+            });
+        }
     }
     
     function applyFixedPosition() {

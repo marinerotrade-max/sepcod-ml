@@ -55,30 +55,16 @@ class AMST_Language_Detector {
             $this->set_language_cookie( $potential_lang );
         } else {
             // No language prefix in URL
+            // Use default language - NO AUTO-REDIRECT
+            // This prevents redirecting to blog and keeps users on the current page
+            $this->current_language = $default_lang;
+            
             // Check if user has a language preference cookie
             $cookie_lang = $this->get_language_cookie();
             
-            // Only redirect if NOT in admin area and NOT on login page
-            $is_admin = is_admin() || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() );
-            $is_login = isset( $GLOBALS['pagenow'] ) && in_array( $GLOBALS['pagenow'], array( 'wp-login.php', 'wp-register.php' ), true );
-            
-            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) && $cookie_lang !== $default_lang && ! $is_admin && ! $is_login ) {
-                // User has a saved preference for a non-default language
-                // Redirect to the language-prefixed URL to maintain consistency (frontend only)
-                $current_url = $this->get_current_url();
-                $lang_url = $this->get_language_url( $current_url, $cookie_lang );
-                if ( $current_url !== $lang_url ) {
-                    wp_safe_redirect( $lang_url );
-                    exit;
-                }
-                $this->current_language = $cookie_lang;
-            } else {
-                // No cookie or cookie is for default language - use default
-                $this->current_language = $default_lang;
-                // Clear cookie if it was set to default language
-                if ( $cookie_lang === $default_lang ) {
-                    $this->clear_language_cookie();
-                }
+            // Clear cookie if it's set to default language (no need to persist default)
+            if ( $cookie_lang === $default_lang ) {
+                $this->clear_language_cookie();
             }
         }
         
