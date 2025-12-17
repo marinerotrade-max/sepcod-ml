@@ -1,12 +1,40 @@
 /**
  * Language Switcher JavaScript
- * Handles modal popup and dropdown interactions
+ * Handles modal popup and dropdown interactions with proper cookie management
  */
 
 (function($) {
     'use strict';
     
+    // Cookie helper functions
+    function setCookie(name, value, days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+    }
+    
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+    
     $(document).ready(function() {
+        // Check if user has already interacted with language switcher
+        if (getCookie('amst_language_selected') === 'yes') {
+            // User has already made a choice, don't show modal automatically
+            $('.amst-modal-overlay').hide();
+        }
+        
         initLanguageSwitcher();
     });
     
@@ -31,21 +59,23 @@
         // Close modal on overlay click
         $('.amst-modal-overlay').on('click', function(e) {
             if ($(e.target).hasClass('amst-modal-overlay')) {
-                closeModal($(this));
+                closeModalPermanently($(this));
             }
         });
         
-        // Close modal on close button click
+        // Close modal on close button click - FIXED to work properly
         $('.amst-modal-close').on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            closeModal($(this).closest('.amst-modal-overlay'));
+            console.log('Close button clicked'); // Debug log
+            closeModalPermanently($(this).closest('.amst-modal-overlay'));
+            return false;
         });
         
         // Close modal on Escape key
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape' && $('.amst-modal-overlay:visible').length) {
-                closeModal($('.amst-modal-overlay:visible'));
+                closeModalPermanently($('.amst-modal-overlay:visible'));
             }
         });
         
@@ -78,6 +108,9 @@
             e.preventDefault();
             e.stopPropagation();
             
+            // Set cookie to remember user made a language selection
+            setCookie('amst_language_selected', 'yes', 365); // Remember for 1 year
+            
             // Show loading state
             $this.closest('.amst-language-switcher').addClass('loading');
             
@@ -88,7 +121,7 @@
             // Forcefully hide and remove all modal elements
             if ($overlay.length) {
                 $overlay.hide();
-                $overlay.css({'display': 'none', 'visibility': 'hidden', 'opacity': '0'});
+                $overlay.css({'display': 'none', 'visibility': 'hidden', 'opacity': '0', 'pointer-events': 'none'});
                 $overlay.remove(); // Completely remove modal from DOM
             }
             
@@ -105,6 +138,9 @@
             
             // Restore body scroll
             $('body').css('overflow', '').css('overflow-y', '');
+            
+            // Remove any lingering modals from entire page
+            $('.amst-modal-overlay').remove();
             
             // Navigate immediately - no delay needed since we removed the modal from DOM
             window.location.href = href;
@@ -146,13 +182,26 @@
         applyFixedPosition();
     }
     
-    function closeModal($overlay) {
+    // Close modal and save cookie to prevent reappearance
+    function closeModalPermanently($overlay) {
         if ($overlay && $overlay.length) {
-            $overlay.fadeOut(300, function() {
-                var $switcher = $overlay.closest('.amst-language-switcher');
-                $switcher.find('.amst-current-language').removeClass('active');
-                $('body').css('overflow', '');
-            });
+            console.log('Closing modal permanently'); // Debug log
+            
+            // Set cookie so modal doesn't appear again
+            setCookie('amst_language_selected', 'yes', 365); // Remember for 1 year
+            
+            // Immediately hide and remove the modal
+            $overlay.hide();
+            $overlay.css({'display': 'none', 'visibility': 'hidden', 'opacity': '0', 'pointer-events': 'none'});
+            
+            var $switcher = $overlay.closest('.amst-language-switcher');
+            $switcher.find('.amst-current-language').removeClass('active');
+            $('body').css('overflow', '');
+            
+            // Completely remove from DOM after a brief moment
+            setTimeout(function() {
+                $overlay.remove();
+            }, 100);
         }
     }
     
