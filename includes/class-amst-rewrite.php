@@ -41,6 +41,8 @@ class AMST_Rewrite {
         add_action( 'init', array( $this, 'add_rewrite_rules' ), 1 );
         add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
         add_action( 'template_redirect', array( $this, 'prevent_canonical_redirect' ), 1 );
+        add_action( 'pre_get_posts', array( $this, 'fix_front_page_query' ), 1 );
+        add_filter( 'home_url', array( $this, 'filter_home_url' ), 10, 4 );
     }
     
     /**
@@ -113,5 +115,66 @@ class AMST_Rewrite {
         if ( $current_lang !== $default_lang ) {
             remove_filter( 'template_redirect', 'redirect_canonical' );
         }
+    }
+    
+    /**
+     * Fix front page query when language prefix is detected.
+     * 
+     * This is critical for making /de/, /fr/, etc. load the static front page
+     * instead of the blog page.
+     *
+     * @param WP_Query $query The WP_Query instance.
+     */
+    public function fix_front_page_query( $query ) {
+        // Only run on main query
+        if ( ! $query->is_main_query() ) {
+            return;
+        }
+        
+        // Check if is_homepage query var is set (from our rewrite rule)
+        if ( get_query_var( 'is_homepage' ) ) {
+            $page_on_front = get_option( 'page_on_front' );
+            
+            if ( $page_on_front ) {
+                // Set the page_id to the static front page
+                $query->set( 'page_id', $page_on_front );
+                $query->set( 'is_home', false );
+                $query->is_home = false;
+                $query->is_front_page = true;
+            }
+        }
+    }
+    
+    /**
+     * Filter home_url to append language prefix for non-default languages.
+     * 
+     * This ensures home links (like logos) automatically go to the translated homepage.
+     *
+     * @param string $url The complete home URL including scheme and path.
+     * @param string $path Path relative to the home URL.
+     * @param string $orig_scheme Scheme to give the home URL context.
+     * @param int    $blog_id Blog ID, or null for the current blog.
+     * @return string Modified URL with language prefix if needed.
+     */
+    public function filter_home_url( $url, $path, $orig_scheme, $blog_id ) {
+        $current_lang = $this->language_detector->get_current_language();
+        $default_lang = $this->language_detector->get_default_language();
+        
+        // Only modify if we're on a non-default language
+        if ( $current_lang === $default_lang ) {
+            return $url;
+        }
+        
+        // Don't modify admin URLs
+        if ( is_admin() ) {
+            return $url;
+        }
+        
+        // If path is empty or just '/', add language prefix
+        if ( empty( $path ) || $path === '/' ) {
+            $url = trailingslashit( $url ) . $current_lang . '/';
+        }
+        
+        return $url;
     }
 }
