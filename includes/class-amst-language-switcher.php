@@ -56,6 +56,15 @@ class AMST_Language_Switcher {
 		
 		// Add filter for menu links to maintain language persistence
 		add_filter( 'nav_menu_link_attributes', array( $this, 'add_language_to_menu_links' ), 10, 3 );
+		
+		// Add filters for ALL WordPress-generated links to maintain language persistence
+		add_filter( 'page_link', array( $this, 'add_language_to_link' ), 10, 2 );
+		add_filter( 'post_link', array( $this, 'add_language_to_link' ), 10, 2 );
+		add_filter( 'post_type_link', array( $this, 'add_language_to_link' ), 10, 2 );
+		add_filter( 'term_link', array( $this, 'add_language_to_term_link' ), 10, 3 );
+		add_filter( 'category_link', array( $this, 'add_language_to_term_link' ), 10, 3 );
+		add_filter( 'tag_link', array( $this, 'add_language_to_term_link' ), 10, 3 );
+		add_filter( 'home_url', array( $this, 'add_language_to_home_url' ), 10, 4 );
 	}
 	
 	/**
@@ -409,5 +418,158 @@ class AMST_Language_Switcher {
 		}
 		
 		return $atts;
+	}
+	
+	/**
+	 * Add language prefix to page/post/custom post type links.
+	 * 
+	 * Fixes the issue where navigating to pages/posts loses the selected language.
+	 * This filter intercepts WordPress-generated permalink links.
+	 *
+	 * @param string $url     The page/post URL.
+	 * @param int    $post_id The post ID (optional).
+	 * @return string Modified URL with language prefix.
+	 */
+	public function add_language_to_link( $url, $post_id = 0 ) {
+		// Don't modify in admin area
+		if ( is_admin() ) {
+			return $url;
+		}
+		
+		// Get current language
+		$language_detector = amst()->language_detector;
+		$current_lang = $language_detector->get_current_language();
+		$default_lang = $language_detector->get_default_language();
+		
+		// Only modify if we're not in default language
+		if ( $current_lang === $default_lang ) {
+			return $url;
+		}
+		
+		// Get home URL for comparison
+		$home_url = untrailingslashit( home_url( '/' ) );
+		
+		// Check if this URL belongs to our site (not external)
+		if ( strpos( $url, $home_url ) !== 0 ) {
+			// External link or different domain - don't modify
+			return $url;
+		}
+		
+		// Don't modify mailto, tel, or other special URLs
+		if ( preg_match( '#^(mailto:|tel:|ftp:|file:|javascript:)#i', $url ) ) {
+			return $url;
+		}
+		
+		// Extract the path after home URL
+		$path = str_replace( $home_url, '', $url );
+		$path = trim( $path, '/' );
+		
+		// Preserve query string and fragment
+		$query_string = '';
+		$fragment = '';
+		if ( strpos( $path, '?' ) !== false ) {
+			list( $path, $query_string ) = explode( '?', $path, 2 );
+		}
+		if ( strpos( $path, '#' ) !== false ) {
+			list( $path, $fragment ) = explode( '#', $path, 2 );
+		}
+		
+		// Split path into segments
+		$path_segments = empty( $path ) ? array() : explode( '/', $path );
+		
+		// Get all enabled language codes
+		$enabled_languages = $language_detector->get_enabled_languages();
+		
+		// Check if path already has a language prefix
+		if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
+			// Already has a language prefix - don't add another one (prevent stacking)
+			return $url;
+		}
+		
+		// Build new URL with language prefix
+		$new_url = $home_url . '/' . $current_lang;
+		if ( ! empty( $path ) ) {
+			$new_url .= '/' . $path;
+		}
+		$new_url = trailingslashit( $new_url );
+		
+		// Add back query string and fragment
+		if ( ! empty( $query_string ) ) {
+			$new_url .= '?' . $query_string;
+		}
+		if ( ! empty( $fragment ) ) {
+			$new_url .= '#' . $fragment;
+		}
+		
+		return $new_url;
+	}
+	
+	/**
+	 * Add language prefix to term (category/tag) links.
+	 * 
+	 * Fixes the issue where clicking category/tag links loses the selected language.
+	 *
+	 * @param string $url      The term URL.
+	 * @param object $term     The term object.
+	 * @param string $taxonomy The taxonomy slug.
+	 * @return string Modified URL with language prefix.
+	 */
+	public function add_language_to_term_link( $url, $term = null, $taxonomy = null ) {
+		// Don't modify in admin area
+		if ( is_admin() ) {
+			return $url;
+		}
+		
+		// Use the same logic as add_language_to_link
+		return $this->add_language_to_link( $url, 0 );
+	}
+	
+	/**
+	 * Add language prefix to home URL (site logo and home buttons).
+	 * 
+	 * Fixes the issue where site logo and home buttons go to English root instead of language root.
+	 *
+	 * @param string      $url     The complete home URL including scheme and path.
+	 * @param string      $path    Path relative to the home URL.
+	 * @param string|null $orig_scheme Scheme to give the home URL context.
+	 * @param int|null    $blog_id Blog ID, or null for the current blog.
+	 * @return string Modified URL with language prefix.
+	 */
+	public function add_language_to_home_url( $url, $path = '', $orig_scheme = null, $blog_id = null ) {
+		// Don't modify in admin area
+		if ( is_admin() ) {
+			return $url;
+		}
+		
+		// Get current language
+		$language_detector = amst()->language_detector;
+		$current_lang = $language_detector->get_current_language();
+		$default_lang = $language_detector->get_default_language();
+		
+		// Only modify if we're not in default language
+		if ( $current_lang === $default_lang ) {
+			return $url;
+		}
+		
+		// Only modify if path is empty or just '/' (the actual home URL)
+		// Don't modify if there's already a path (like /contact)
+		if ( empty( $path ) || $path === '/' ) {
+			// Get base home URL
+			$home_url = untrailingslashit( home_url( '/', $orig_scheme ) );
+			
+			// Check if URL already has language prefix
+			$enabled_languages = $language_detector->get_enabled_languages();
+			foreach ( $enabled_languages as $lang ) {
+				if ( strpos( $url, $home_url . '/' . $lang ) === 0 ) {
+					// Already has a language prefix
+					return $url;
+				}
+			}
+			
+			// Add language prefix to home URL
+			return trailingslashit( $home_url . '/' . $current_lang );
+		}
+		
+		return $url;
 	}
 }
