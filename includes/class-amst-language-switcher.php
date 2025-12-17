@@ -53,6 +53,9 @@ class AMST_Language_Switcher {
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_shortcode( 'amst_language_switcher', array( $this, 'render_shortcode' ) );
+		
+		// Add filter for menu links to maintain language persistence
+		add_filter( 'nav_menu_link_attributes', array( $this, 'add_language_to_menu_links' ), 10, 3 );
 	}
 	
 	/**
@@ -338,5 +341,73 @@ class AMST_Language_Switcher {
 	 */
 	public function get_flag_icon( $lang ) {
 		return isset( $this->flag_icons[ $lang ] ) ? $this->flag_icons[ $lang ] : '🌐';
+	}
+	
+	/**
+	 * Add language prefix to menu links to maintain language persistence.
+	 * 
+	 * Fixes the issue where clicking menu items in /de/ goes back to English root.
+	 * This filter intercepts every menu link and adds the current language prefix.
+	 *
+	 * @param array    $atts  The HTML attributes applied to the menu item's <a> element.
+	 * @param WP_Post  $item  The current menu item.
+	 * @param stdClass $args  An object of wp_nav_menu() arguments.
+	 * @return array Modified attributes with language prefix in href.
+	 */
+	public function add_language_to_menu_links( $atts, $item, $args ) {
+		// Get current language
+		$language_detector = amst()->language_detector;
+		$current_lang = $language_detector->get_current_language();
+		$default_lang = $language_detector->get_default_language();
+		
+		// Only modify if we're not in default language
+		if ( $current_lang === $default_lang ) {
+			return $atts;
+		}
+		
+		// Get the menu item URL
+		$url = isset( $atts['href'] ) ? $atts['href'] : '';
+		
+		if ( empty( $url ) ) {
+			return $atts;
+		}
+		
+		// Get home URL for comparison
+		$home_url = untrailingslashit( home_url( '/' ) );
+		
+		// Check if this URL belongs to our site (not external)
+		if ( strpos( $url, $home_url ) !== 0 ) {
+			// External link or different domain - don't modify
+			return $atts;
+		}
+		
+		// Extract the path after home URL
+		$path = str_replace( $home_url, '', $url );
+		$path = trim( $path, '/' );
+		
+		// Split path into segments
+		$path_segments = empty( $path ) ? array() : explode( '/', $path );
+		
+		// Get all enabled language codes
+		$enabled_languages = $language_detector->get_enabled_languages();
+		
+		// Check if path already has a language prefix
+		if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
+			// Already has a language prefix - don't add another one (prevent stacking)
+			return $atts;
+		}
+		
+		// Now add the current language prefix
+		if ( empty( $path ) ) {
+			// This is the home link - point to language root
+			// e.g., janadory.com/de/
+			$atts['href'] = trailingslashit( $home_url . '/' . $current_lang );
+		} else {
+			// This is a regular menu item - add language prefix
+			// e.g., janadory.com/contact → janadory.com/de/contact
+			$atts['href'] = trailingslashit( $home_url . '/' . $current_lang . '/' . $path );
+		}
+		
+		return $atts;
 	}
 }
