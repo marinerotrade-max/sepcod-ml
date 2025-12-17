@@ -1,0 +1,318 @@
+/**
+ * Language Switcher Styles
+ * Enhanced with flag icons and modal popup
+ */
+
+/* Base Styles */
+.amst-language-switcher {
+    position: relative;
+    display: inline-block;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.amst-current-language {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: #fff;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.amst-current-language:hover {
+    border-color: #0073aa;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.amst-current-language:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Flag Styles */
+.amst-flag {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.amst-flag-small .amst-flag {
+    font-size: 18px;
+}
+
+.amst-flag-medium .amst-flag {
+    font-size: 24px;
+}
+
+.amst-flag-large .amst-flag {
+    font-size: 32px;
+}
+
+.amst-lang-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.amst-dropdown-arrow {
+    font-size: 12px;
+    color: #666;
+    transition: transform 0.3s ease;
+}
+
+.amst-current-language.active .amst-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* Modal Overlay */
+.amst-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.amst-modal-content {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.amst-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+}
+
+.amst-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.amst-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.amst-modal-close:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.amst-modal-body {
+    padding: 25px;
+    overflow-y: auto;
+    max-height: calc(80vh - 80px);
+}
+
+/* Languages Grid */
+.amst-languages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.amst-language-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.amst-language-option:hover {
+    background: #e9ecef;
+    border-color: #0073aa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.amst-language-option.amst-current {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+.amst-language-option.amst-current .amst-lang-name {
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Dropdown Style */
+.amst-dropdown-style {
+    position: relative;
+}
+
+.amst-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 200px;
+    z-index: 1000;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.amst-dropdown-menu .amst-language-option {
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #eee;
+}
+
+.amst-dropdown-menu .amst-language-option:last-child {
+    border-bottom: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.amst-dropdown-menu .amst-language-option:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+/* Inline Style */
+.amst-inline-style {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.amst-inline-style .amst-language-option {
+    padding: 8px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .amst-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .amst-languages-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    
+    .amst-language-option {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .amst-flag-medium .amst-flag {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .amst-languages-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    
+    .amst-modal-header h3 {
+        font-size: 18px;
+    }
+}
+
+/* Accessibility */
+.amst-language-option:focus,
+.amst-current-language:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Loading State */
+.amst-language-switcher.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Fixed Position Options */
+.amst-language-switcher.amst-fixed {
+    position: fixed;
+    z-index: 9999;
+}
+
+.amst-language-switcher.amst-fixed.bottom-right {
+    bottom: 20px;
+    right: 20px;
+}
+
+.amst-language-switcher.amst-fixed.bottom-left {
+    bottom: 20px;
+    left: 20px;
+}
+
+.amst-language-switcher.amst-fixed.top-right {
+    top: 20px;
+    right: 20px;
+}
+
+.amst-language-switcher.amst-fixed.top-left {
+    top: 20px;
+    left: 20px;
+}

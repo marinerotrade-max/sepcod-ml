@@ -38,6 +38,7 @@ require_once AMST_PLUGIN_DIR . 'includes/class-amst-content-processor.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-shortcodes.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-manual-translations.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-comprehensive-filters.php';
+require_once AMST_PLUGIN_DIR . 'includes/class-amst-language-switcher.php';
 require_once AMST_PLUGIN_DIR . 'admin/class-amst-admin.php';
 
 /**
@@ -166,6 +167,13 @@ class Auto_Multilingual_SEO_Translator {
     public $comprehensive_filters;
     
     /**
+     * Language switcher handler.
+     *
+     * @var AMST_Language_Switcher
+     */
+    public $language_switcher;
+    
+    /**
      * Initialize components.
      */
     private function init_components() {
@@ -180,6 +188,7 @@ class Auto_Multilingual_SEO_Translator {
         $this->content_processor = new AMST_Content_Processor( $this->translator, $this->language_detector, $this->cache );
         $this->manual_translations = new AMST_Manual_Translations( $this->cache, $this->database );
         $this->comprehensive_filters = new AMST_Comprehensive_Filters( $this->language_detector, $this->content_processor );
+        $this->language_switcher = new AMST_Language_Switcher();
         
         if ( is_admin() ) {
             $this->admin = new AMST_Admin();
@@ -218,6 +227,11 @@ class Auto_Multilingual_SEO_Translator {
             'amst_enable_hreflang' => true,
             'amst_enable_canonical' => true,
             'amst_enable_sitemap' => true,
+            'amst_switcher_style' => 'modal',
+            'amst_switcher_show_names' => 'no',
+            'amst_switcher_flag_size' => 'medium',
+            'amst_switcher_position' => 'inline',
+            'amst_switcher_modal_title' => __( 'Select Language', 'auto-multilingual-seo' ),
         );
         
         foreach ( $defaults as $key => $value ) {
