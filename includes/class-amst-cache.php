@@ -54,6 +54,9 @@ class AMST_Cache {
         $translation = $this->database->get_translation( $content_hash, $source_lang, $target_lang );
         
         if ( false !== $translation ) {
+            // Fix UTF-8 encoding issues on retrieval
+            $translation = AMST_UTF8_Helper::fix_translation_encoding( $translation );
+            
             // Store in object cache for fast retrieval
             $cache_key = $this->get_cache_key( $content_hash, $source_lang, $target_lang );
             $expiry = get_option( 'amst_cache_expiry', 2592000 );
@@ -66,6 +69,8 @@ class AMST_Cache {
             $transient_key = 'amst_auto_' . $this->get_cache_key( $content_hash, $source_lang, $target_lang );
             $automatic_translation = get_transient( $transient_key );
             if ( false !== $automatic_translation ) {
+                // Fix UTF-8 encoding issues on retrieval
+                $automatic_translation = AMST_UTF8_Helper::fix_translation_encoding( $automatic_translation );
                 return $automatic_translation;
             }
         }
@@ -83,7 +88,14 @@ class AMST_Cache {
      */
     public function get_automatic_translation( $content_hash, $source_lang, $target_lang ) {
         $transient_key = 'amst_auto_' . $this->get_cache_key( $content_hash, $source_lang, $target_lang );
-        return get_transient( $transient_key );
+        $translation = get_transient( $transient_key );
+        
+        if ( false !== $translation ) {
+            // Fix UTF-8 encoding issues on retrieval
+            $translation = AMST_UTF8_Helper::fix_translation_encoding( $translation );
+        }
+        
+        return $translation;
     }
     
     /**

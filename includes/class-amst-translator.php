@@ -123,6 +123,9 @@ class AMST_Translator {
         
         $translated_text = $data['data']['translations'][0]['translatedText'];
         
+        // Fix UTF-8 encoding issues (Croatian: č,š,ž,đ,ć and all special characters)
+        $translated_text = AMST_UTF8_Helper::fix_translation_encoding( $translated_text );
+        
         // Save to transient ONLY (temporary cache, NOT database)
         // Automatic translations expire after 1 hour
         $this->cache->save_automatic_translation( $content_hash, $source_lang, $target_lang, $translated_text, 3600 );

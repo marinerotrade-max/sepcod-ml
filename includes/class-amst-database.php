@@ -107,6 +107,9 @@ class AMST_Database {
     public function get_translation( $content_hash, $source_lang, $target_lang ) {
         global $wpdb;
         
+        // Ensure database connection uses UTF-8mb4
+        AMST_UTF8_Helper::set_charset_utf8mb4( $wpdb );
+        
         // PRIORITY: Get manual translation first
         $result = $wpdb->get_row(
             $wpdb->prepare(
@@ -133,7 +136,9 @@ class AMST_Database {
                     $target_lang
                 )
             );
-            return $result->translated_text;
+            
+            // Fix UTF-8 encoding on retrieval
+            return AMST_UTF8_Helper::fix_translation_encoding( $result->translated_text );
         }
         
         return false;
@@ -180,6 +185,13 @@ class AMST_Database {
      */
     public function save_translation( $content_hash, $source_lang, $target_lang, $original_text, $translated_text, $content_type = 'general', $is_manual = false ) {
         global $wpdb;
+        
+        // Ensure database connection uses UTF-8mb4
+        AMST_UTF8_Helper::set_charset_utf8mb4( $wpdb );
+        
+        // Prepare text for database storage (fix encoding)
+        $original_text = AMST_UTF8_Helper::prepare_for_database( $original_text );
+        $translated_text = AMST_UTF8_Helper::prepare_for_database( $translated_text );
         
         $result = $wpdb->replace(
             $this->table_name,
