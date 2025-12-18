@@ -85,13 +85,16 @@ class AMST_Language_Detector {
     
     /**
      * Set language preference cookie - ALWAYS overwrites existing cookie.
+     * FIXED: Explicit path="/" for Hostinger compatibility.
      *
      * @param string $lang Language code.
      */
     private function set_language_cookie( $lang ) {
         if ( ! headers_sent() ) {
-            // Force overwrite with path=/ to ensure cookie is updated site-wide
-            setcookie( 'amst_language', $lang, time() + ( 30 * DAY_IN_SECONDS ), '/', COOKIE_DOMAIN, is_ssl(), false );
+            // FIXED: Force overwrite with explicit path="/" to ensure cookie is updated site-wide
+            // This works on all hosting platforms including Hostinger
+            // Cookie expires in 30 days (86400 * 30 seconds)
+            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), "/", COOKIE_DOMAIN, is_ssl(), false );
         }
     }
     

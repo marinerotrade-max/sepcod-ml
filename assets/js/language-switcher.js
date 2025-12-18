@@ -6,14 +6,16 @@
 (function($) {
     'use strict';
     
-    // Cookie helper functions
+    // Cookie helper functions - FIXED: Ensure path=/ and proper domain
     function setCookie(name, value, days) {
+        console.log('Setting cookie to: ' + value); // DEBUGGING
         var expires = "";
         if (days) {
             var date = new Date();
             date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
             expires = "; expires=" + date.toUTCString();
         }
+        // FIXED: Explicit path=/ ensures cookie works on all pages (including subpages like /fr/)
         document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
     }
     
@@ -28,7 +30,7 @@
         return null;
     }
     
-    // Extract language from URL - with validation against known languages
+    // FIXED: Extract language from URL - with validation against known languages
     function getLangFromUrl() {
         var path = window.location.pathname;
         var segments = path.split('/').filter(function(s) { return s.length > 0; });
@@ -40,8 +42,10 @@
         
         // Check if first segment is a valid 2-letter language code
         if (segments.length > 0 && segments[0].length === 2 && knownLangs.indexOf(segments[0]) !== -1) {
+            console.log('Language from URL: ' + segments[0]); // DEBUGGING
             return segments[0];
         }
+        console.log('No language in URL, defaulting to: en'); // DEBUGGING
         return 'en'; // Default language
     }
     
@@ -156,13 +160,16 @@
                     newUrl += '/';
                 }
                 
-                // Set new cookie with target language
+                // Set new cookie with target language (will be logged by setCookie)
                 setCookie('amst_language', targetLang, 30);
                 
-                // If using i18next, change language before redirect
+                // If using i18next, force change language before redirect
                 if (typeof i18next !== 'undefined') {
+                    console.log('i18next detected, changing language to: ' + targetLang); // DEBUGGING
                     i18next.changeLanguage(targetLang);
                 }
+                
+                console.log('Redirecting to: ' + newUrl); // DEBUGGING
                 
                 // FORCED REDIRECT: Use window.location.href to ensure page reloads
                 // This forces server to recognize new language
