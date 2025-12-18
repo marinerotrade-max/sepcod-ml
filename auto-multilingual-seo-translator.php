@@ -3,7 +3,7 @@
  * Plugin Name: Auto Multilingual SEO Translator
  * Plugin URI: https://github.com/marinerotrade-max/sepcod-ml
  * Description: Automatically translate all website content into multiple languages using Google Cloud Translation API with server-side rendering for SEO.
- * Version: 1.4.8
+ * Version: 1.4.9
  * Author: Majed Nefzi
  * Author URI: https://github.com/marinerotrade-max
  * License: GPL v2 or later

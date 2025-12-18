@@ -6,29 +6,8 @@
 (function($) {
     'use strict';
     
-    // Cookie helper functions - FIXED: Ensure path=/ and proper domain
-    function setCookie(name, value, days) {
-        console.log('Setting cookie to: ' + value); // DEBUGGING
-        var expires = "";
-        if (days) {
-            var date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        // FIXED: Explicit path=/ ensures cookie works on all pages (including subpages like /fr/)
-        document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
-    }
-    
-    function getCookie(name) {
-        var nameEQ = name + "=";
-        var ca = document.cookie.split(';');
-        for(var i = 0; i < ca.length; i++) {
-            var c = ca[i];
-            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-        }
-        return null;
-    }
+    // REMOVED v1.4.9: Cookie setting functions no longer needed
+    // PHP handles all cookie operations server-side via ?set_lang parameter
     
     // FIXED: Extract language from URL - with validation against known languages
     function getLangFromUrl() {
@@ -66,10 +45,7 @@
         return segments.length > 0 ? '/' + segments.join('/') : '';
     }
     
-    // Delete cookie helper function
-    function deleteCookie(name) {
-        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    }
+    // REMOVED v1.4.9: Cookie deletion no longer needed - PHP handles everything
     
     // INITIALIZATION: Set active language based on URL (URL has priority over cookie)
     function initializeLanguageSwitcher() {
@@ -96,13 +72,10 @@
             }
         });
         
-        // Force cookie to match URL language (URL is source of truth)
-        // Delete old cookie and set new one
-        deleteCookie('amst_language');
-        setCookie('amst_language', currentLang, 30);
-        
-        // If using i18next, sync it with current language
-        if (typeof i18next !== 'undefined') {
+        // If using i18next, sync it with current language from URL
+        // FIXED v1.4.9: Never fall back to 'de-DE' - always use URL language
+        if (typeof i18next !== 'undefined' && i18next.language !== currentLang) {
+            console.log('i18next detected, changing language to: ' + currentLang); // DEBUGGING
             i18next.changeLanguage(currentLang);
         }
     }

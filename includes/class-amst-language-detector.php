@@ -103,38 +103,30 @@ class AMST_Language_Detector {
     }
     
     /**
-     * Set language preference cookie - ALWAYS overwrites existing cookie.
-     * FIXED: Explicit path="/" for Hostinger compatibility.
+     * Set language preference cookie - SIMPLIFIED for maximum compatibility.
+     * CRITICAL FIX v1.4.9: Removed extra parameters that block cookie on some servers.
      *
      * @param string $lang Language code.
      */
     private function set_language_cookie( $lang ) {
         if ( ! headers_sent() ) {
-            // FIXED: Force overwrite with explicit path="/" to ensure cookie is updated site-wide
-            // This works on all hosting platforms including Hostinger
+            // SIMPLIFIED: Only essential parameters for maximum compatibility
             // Cookie expires in 30 days (86400 * 30 seconds)
-            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), "/", COOKIE_DOMAIN, is_ssl(), false );
+            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/' );
         }
     }
     
     /**
-     * Set language preference cookie with enhanced security flags (PHP-based setter).
-     * NEW v1.4.8: Uses explicit domain and enhanced security for PHP-based cookie setting.
+     * Set language preference cookie with SIMPLIFIED parameters (PHP-based setter).
+     * CRITICAL FIX v1.4.9: Removed domain, secure, and httponly parameters that block cookie on some servers.
      *
      * @param string $lang Language code.
      */
     private function set_language_cookie_secure( $lang ) {
         if ( ! headers_sent() ) {
-            $domain = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-            // Remove port from domain if present
-            $domain = preg_replace( '/:\d+$/', '', $domain );
-            
-            // PHP-based cookie with maximum compatibility
-            // path='/' - works on all pages
-            // domain=$domain - explicit domain for Hostinger
-            // secure=true - HTTPS only (use is_ssl() for auto-detection)
-            // httponly=true - prevents JavaScript access (more secure)
-            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/', $domain, is_ssl(), true );
+            // SIMPLIFIED: Only essential parameters to ensure cookie works on all servers
+            // Removed domain, secure, and httponly parameters that were blocking cookie storage
+            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/' );
         }
     }
     
