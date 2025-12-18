@@ -32,10 +32,29 @@ class AMST_Language_Detector {
     
     /**
      * Detect language from URL and cookie with fresh reading on every page load.
+     * ENHANCED v1.4.8: Added ?set_lang=XX parameter for PHP-based cookie setting.
      */
     public function detect_language() {
         $default_lang = get_option( 'amst_default_language', 'en' );
         $enabled_languages = get_option( 'amst_enabled_languages', array( 'en' ) );
+        
+        // PRIORITY 0: Check ?set_lang=XX parameter (PHP-based cookie setter - HIGHEST PRIORITY)
+        // This parameter triggers PHP to set the cookie server-side with proper security flags
+        $set_lang_param = isset( $_GET['set_lang'] ) ? sanitize_text_field( wp_unslash( $_GET['set_lang'] ) ) : '';
+        if ( ! empty( $set_lang_param ) && in_array( $set_lang_param, $enabled_languages, true ) ) {
+            // Set cookie via PHP with HttpOnly and Secure flags for security
+            $this->set_language_cookie_secure( $set_lang_param );
+            $this->current_language = $set_lang_param;
+            $GLOBALS['amst_current_language'] = $this->current_language;
+            
+            // Redirect to clean URL without the set_lang parameter
+            $redirect_url = $this->build_redirect_url( $set_lang_param );
+            if ( ! headers_sent() ) {
+                wp_safe_redirect( $redirect_url );
+                exit;
+            }
+            return;
+        }
         
         // PRIORITY 1: Check URL parameter ?lang=XX (highest priority - overrides cookie)
         $url_param_lang = isset( $_GET['lang'] ) ? sanitize_text_field( wp_unslash( $_GET['lang'] ) ) : '';
@@ -96,6 +115,73 @@ class AMST_Language_Detector {
             // Cookie expires in 30 days (86400 * 30 seconds)
             setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), "/", COOKIE_DOMAIN, is_ssl(), false );
         }
+    }
+    
+    /**
+     * Set language preference cookie with enhanced security flags (PHP-based setter).
+     * NEW v1.4.8: Uses explicit domain and enhanced security for PHP-based cookie setting.
+     *
+     * @param string $lang Language code.
+     */
+    private function set_language_cookie_secure( $lang ) {
+        if ( ! headers_sent() ) {
+            $domain = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+            // Remove port from domain if present
+            $domain = preg_replace( '/:\d+$/', '', $domain );
+            
+            // PHP-based cookie with maximum compatibility
+            // path='/' - works on all pages
+            // domain=$domain - explicit domain for Hostinger
+            // secure=true - HTTPS only (use is_ssl() for auto-detection)
+            // httponly=true - prevents JavaScript access (more secure)
+            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/', $domain, is_ssl(), true );
+        }
+    }
+    
+    /**
+     * Build redirect URL after setting cookie via ?set_lang parameter.
+     * Preserves the language prefix in URL and removes the set_lang parameter.
+     *
+     * @param string $lang Language code.
+     * @return string Clean redirect URL.
+     */
+    private function build_redirect_url( $lang ) {
+        $default_lang = get_option( 'amst_default_language', 'en' );
+        $enabled_languages = get_option( 'amst_enabled_languages', array( 'en' ) );
+        
+        // Get current URL
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+        $parsed = wp_parse_url( $request_uri );
+        $path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
+        
+        // Remove ALL language prefixes from path
+        $path_parts = array_filter( explode( '/', $path ) );
+        while ( ! empty( $path_parts ) && in_array( reset( $path_parts ), $enabled_languages, true ) ) {
+            array_shift( $path_parts );
+        }
+        
+        // Build clean path
+        $clean_path = ! empty( $path_parts ) ? '/' . implode( '/', $path_parts ) : '';
+        
+        // Add language prefix (unless it's the default language)
+        $new_path = $lang !== $default_lang ? '/' . $lang . $clean_path : $clean_path;
+        
+        // Ensure path starts with /
+        if ( empty( $new_path ) ) {
+            $new_path = '/';
+        } elseif ( $new_path[0] !== '/' ) {
+            $new_path = '/' . $new_path;
+        }
+        
+        // Build full URL (preserve query string but remove set_lang parameter)
+        $query_string = isset( $parsed['query'] ) ? $parsed['query'] : '';
+        if ( ! empty( $query_string ) ) {
+            parse_str( $query_string, $query_params );
+            unset( $query_params['set_lang'] ); // Remove set_lang parameter
+            $query_string = ! empty( $query_params ) ? '?' . http_build_query( $query_params ) : '';
+        }
+        
+        return home_url( $new_path . $query_string );
     }
     
     /**

@@ -122,7 +122,8 @@
         // Initialize language switcher on page load
         initializeLanguageSwitcher();
         
-        // CLICK EVENT: Handle language switching with forced override
+        // CLICK EVENT: PHP-BASED cookie setting via ?set_lang parameter
+        // NEW v1.4.8: JavaScript NO LONGER sets cookie - PHP handles it server-side
         $('.amst-language-dropdown').on('change', function() {
             var targetUrl = $(this).val();
             if (targetUrl) {
@@ -140,39 +141,36 @@
                     targetLang = segments[0];
                 }
                 
-                // CLICK-OVERRIDE: Delete existing cookie immediately before setting new one
-                deleteCookie('amst_language');
-                
-                // ALTERNATIVE METHOD: Build clean URL from current page
+                // Build clean URL from current page (remove ALL language prefixes)
                 // This ensures we never have stacked language codes like /fr/de/
                 var currentPath = window.location.pathname;
                 var cleanPath = removeAllLanguagePrefixes(currentPath);
                 
-                // Build new URL with only the target language
+                // Build new URL with target language prefix
                 var newUrl = window.location.origin;
                 if (targetLang !== 'en') {
                     newUrl += '/' + targetLang;
                 }
                 newUrl += cleanPath;
                 
-                // Ensure trailing slash for consistency
-                if (!newUrl.endsWith('/') && newUrl.indexOf('?') === -1) {
+                // Ensure trailing slash for consistency if no query string
+                if (!newUrl.endsWith('/') && newUrl.indexOf('?') === -1 && cleanPath !== '') {
                     newUrl += '/';
                 }
                 
-                // Set new cookie with target language (will be logged by setCookie)
-                setCookie('amst_language', targetLang, 30);
+                // CRITICAL FIX: Add ?set_lang=XX parameter to trigger PHP cookie setting
+                // PHP will set cookie server-side with proper security flags, then redirect to clean URL
+                var separator = newUrl.indexOf('?') > -1 ? '&' : '?';
+                newUrl += separator + 'set_lang=' + targetLang;
                 
-                // If using i18next, force change language before redirect
+                console.log('Redirecting to PHP cookie setter: ' + newUrl); // DEBUGGING
+                
+                // If using i18next, mark that language change is pending
                 if (typeof i18next !== 'undefined') {
-                    console.log('i18next detected, changing language to: ' + targetLang); // DEBUGGING
-                    i18next.changeLanguage(targetLang);
+                    console.log('i18next: Language change to ' + targetLang + ' will be handled after PHP redirect'); // DEBUGGING
                 }
                 
-                console.log('Redirecting to: ' + newUrl); // DEBUGGING
-                
-                // FORCED REDIRECT: Use window.location.href to ensure page reloads
-                // This forces server to recognize new language
+                // REDIRECT: Let PHP handle cookie setting, then PHP will redirect to clean URL
                 window.location.href = newUrl;
             }
         });
