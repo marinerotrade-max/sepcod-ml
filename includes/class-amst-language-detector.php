@@ -26,176 +26,92 @@ class AMST_Language_Detector {
      * Constructor.
      */
     public function __construct() {
-        // FIXED v1.4.10: Use plugins_loaded hook for better timing with cookie setting
+        // v1.5.0: Pure URL-based detection, no cookies
         add_action( 'plugins_loaded', array( $this, 'detect_language' ), 1 );
         add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
+        // v1.5.0: Add WordPress locale filter for native language handling
+        add_filter( 'locale', array( $this, 'set_locale_by_url' ), 10, 1 );
     }
     
     /**
-     * Detect language from URL and cookie with fresh reading on every page load.
-     * ENHANCED v1.4.8: Added ?set_lang=XX parameter for PHP-based cookie setting.
+     * Detect language from URL ONLY - v1.5.0 Pure URL-based (NO cookies, NO parameters).
      */
     public function detect_language() {
         $default_lang = get_option( 'amst_default_language', 'en' );
         $enabled_languages = get_option( 'amst_enabled_languages', array( 'en' ) );
         
-        // PRIORITY 0: Check ?set_lang=XX parameter (PHP-based cookie setter - HIGHEST PRIORITY)
-        // This parameter triggers PHP to set the cookie server-side with proper security flags
-        $set_lang_param = isset( $_GET['set_lang'] ) ? sanitize_text_field( wp_unslash( $_GET['set_lang'] ) ) : '';
-        if ( ! empty( $set_lang_param ) && in_array( $set_lang_param, $enabled_languages, true ) ) {
-            // Set cookie via PHP with HttpOnly and Secure flags for security
-            $this->set_language_cookie_secure( $set_lang_param );
-            $this->current_language = $set_lang_param;
-            $GLOBALS['amst_current_language'] = $this->current_language;
-            
-            // Redirect to clean URL without the set_lang parameter
-            $redirect_url = $this->build_redirect_url( $set_lang_param );
-            if ( ! headers_sent() ) {
-                wp_safe_redirect( $redirect_url );
-                exit;
-            }
-            return;
-        }
-        
-        // PRIORITY 1: Check URL parameter ?lang=XX (highest priority - overrides cookie)
-        $url_param_lang = isset( $_GET['lang'] ) ? sanitize_text_field( wp_unslash( $_GET['lang'] ) ) : '';
-        if ( ! empty( $url_param_lang ) && in_array( $url_param_lang, $enabled_languages, true ) ) {
-            $this->current_language = $url_param_lang;
-            // Overwrite cookie with URL parameter
-            $this->set_language_cookie( $url_param_lang );
-            $GLOBALS['amst_current_language'] = $this->current_language;
-            return;
-        }
-        
-        // PRIORITY 2: Check URL path prefix (e.g., /de/, /fr/)
+        // v1.5.0: ONLY check URL path prefix (e.g., /de/, /fr/, /it/)
         $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
         $path = wp_parse_url( $request_uri, PHP_URL_PATH );
         
-        // Remove leading slash.
+        // Remove leading slash
         $path = ltrim( $path, '/' );
         
-        // Check if path starts with language code.
+        // Check if path starts with language code
         $path_parts = explode( '/', $path );
         $potential_lang = isset( $path_parts[0] ) ? $path_parts[0] : '';
         
         if ( ! empty( $potential_lang ) && in_array( $potential_lang, $enabled_languages, true ) ) {
             // Language prefix found in URL path
             $this->current_language = $potential_lang;
-            // Update cookie to match URL (always sync cookie with URL)
-            $this->set_language_cookie( $potential_lang );
         } else {
-            // PRIORITY 3: No URL prefix - read fresh cookie on EVERY page load
-            // Force fresh cookie read - don't cache it
-            $cookie_lang = $this->get_language_cookie();
-            
-            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) ) {
-                // User has a valid language preference cookie
-                $this->current_language = $cookie_lang;
-            } else {
-                // No valid cookie - use default language
-                $this->current_language = $default_lang;
-                // Clear any invalid cookie
-                $this->clear_language_cookie();
-            }
+            // No URL prefix - use default language
+            $this->current_language = $default_lang;
         }
         
-        // Set as global for easy access.
+        // Set as global for easy access
         $GLOBALS['amst_current_language'] = $this->current_language;
     }
     
     /**
-     * Set language preference cookie - SIMPLIFIED for maximum compatibility.
-     * CRITICAL FIX v1.4.9: Removed extra parameters that block cookie on some servers.
+     * Set WordPress locale based on URL language prefix - v1.5.0.
+     * This uses WordPress's native locale filter for language handling.
      *
-     * @param string $lang Language code.
+     * @param string $locale Current locale.
+     * @return string Modified locale based on URL.
      */
-    private function set_language_cookie( $lang ) {
-        if ( ! headers_sent() ) {
-            // SIMPLIFIED: Only essential parameters for maximum compatibility
-            // Cookie expires in 30 days (86400 * 30 seconds)
-            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/' );
+    public function set_locale_by_url( $locale ) {
+        $path = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+        
+        // Map language codes to WordPress locales
+        $locale_map = array(
+            'bg' => 'bg_BG', // Bulgarian
+            'hr' => 'hr',    // Croatian
+            'cs' => 'cs_CZ', // Czech
+            'da' => 'da_DK', // Danish
+            'nl' => 'nl_NL', // Dutch
+            'en' => 'en_US', // English
+            'et' => 'et',    // Estonian
+            'fi' => 'fi',    // Finnish
+            'fr' => 'fr_FR', // French
+            'de' => 'de_DE', // German
+            'el' => 'el',    // Greek
+            'hu' => 'hu_HU', // Hungarian
+            'ga' => 'ga_IE', // Irish
+            'it' => 'it_IT', // Italian
+            'lv' => 'lv',    // Latvian
+            'lt' => 'lt_LT', // Lithuanian
+            'mt' => 'mt_MT', // Maltese
+            'pl' => 'pl_PL', // Polish
+            'pt' => 'pt_PT', // Portuguese
+            'ro' => 'ro_RO', // Romanian
+            'sk' => 'sk_SK', // Slovak
+            'sl' => 'sl_SI', // Slovenian
+            'es' => 'es_ES', // Spanish
+            'sv' => 'sv_SE', // Swedish
+        );
+        
+        // Check each language prefix in URL
+        foreach ( $locale_map as $lang_code => $wp_locale ) {
+            if ( strpos( $path, '/' . $lang_code . '/' ) === 0 || strpos( $path, '/' . $lang_code . '?' ) !== false ) {
+                return $wp_locale;
+            }
         }
+        
+        return $locale; // Return default if no match
     }
     
-    /**
-     * Set language preference cookie with EXPLICIT domain for Plesk/Hostinger.
-     * CRITICAL FIX v1.4.10: Added explicit domain 'janadory.com' and false flags.
-     *
-     * @param string $lang Language code.
-     */
-    private function set_language_cookie_secure( $lang ) {
-        if ( ! headers_sent() ) {
-            // EXPLICIT domain for Plesk/Hostinger: 'janadory.com'
-            // secure = false, httponly = false for maximum compatibility
-            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/', 'janadory.com', false, false );
-        }
-    }
-    
-    /**
-     * Build redirect URL after setting cookie via ?set_lang parameter.
-     * Preserves the language prefix in URL and removes the set_lang parameter.
-     *
-     * @param string $lang Language code.
-     * @return string Clean redirect URL.
-     */
-    private function build_redirect_url( $lang ) {
-        $default_lang = get_option( 'amst_default_language', 'en' );
-        $enabled_languages = get_option( 'amst_enabled_languages', array( 'en' ) );
-        
-        // Get current URL
-        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-        $parsed = wp_parse_url( $request_uri );
-        $path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
-        
-        // Remove ALL language prefixes from path
-        $path_parts = array_filter( explode( '/', $path ) );
-        while ( ! empty( $path_parts ) && in_array( reset( $path_parts ), $enabled_languages, true ) ) {
-            array_shift( $path_parts );
-        }
-        
-        // Build clean path
-        $clean_path = ! empty( $path_parts ) ? '/' . implode( '/', $path_parts ) : '';
-        
-        // Add language prefix (unless it's the default language)
-        $new_path = $lang !== $default_lang ? '/' . $lang . $clean_path : $clean_path;
-        
-        // Ensure path starts with /
-        if ( empty( $new_path ) ) {
-            $new_path = '/';
-        } elseif ( $new_path[0] !== '/' ) {
-            $new_path = '/' . $new_path;
-        }
-        
-        // Build full URL (preserve query string but remove set_lang parameter)
-        $query_string = isset( $parsed['query'] ) ? $parsed['query'] : '';
-        if ( ! empty( $query_string ) ) {
-            parse_str( $query_string, $query_params );
-            unset( $query_params['set_lang'] ); // Remove set_lang parameter
-            $query_string = ! empty( $query_params ) ? '?' . http_build_query( $query_params ) : '';
-        }
-        
-        return home_url( $new_path . $query_string );
-    }
-    
-    /**
-     * Get language preference from cookie - FRESH READ on every call.
-     *
-     * @return string|null Language code or null if not set.
-     */
-    private function get_language_cookie() {
-        // Force fresh cookie read - check $_COOKIE superglobal directly
-        // This ensures we always get the latest value, not a cached one
-        return isset( $_COOKIE['amst_language'] ) ? sanitize_text_field( wp_unslash( $_COOKIE['amst_language'] ) ) : null;
-    }
-    
-    /**
-     * Clear language preference cookie.
-     */
-    private function clear_language_cookie() {
-        if ( ! headers_sent() ) {
-            setcookie( 'amst_language', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
-        }
-    }
+    // v1.5.0: All cookie functions removed - pure URL-based only
     
     /**
      * Get current language.

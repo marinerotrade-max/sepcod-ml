@@ -53,6 +53,7 @@ class AMST_Language_Switcher {
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_shortcode( 'amst_language_switcher', array( $this, 'render_shortcode' ) );
+		add_shortcode( 'language_switcher', array( $this, 'render_shortcode' ) ); // v1.5.0: Add alias shortcode
 		add_filter( 'home_url', array( $this, 'filter_home_url' ), 10, 2 );
 	}
 	
@@ -87,7 +88,8 @@ class AMST_Language_Switcher {
 	}
 	
 	/**
-	 * Render language switcher shortcode - SIMPLIFIED DROPDOWN ONLY.
+	 * Render language switcher shortcode - v1.5.0 PHP Direct Links (NO JavaScript).
+	 * Theme-independent solution with direct href links like gTranslate.
 	 *
 	 * @param array $atts Shortcode attributes.
 	 * @return string HTML output.
@@ -95,11 +97,12 @@ class AMST_Language_Switcher {
 	public function render_shortcode( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'show_names' => get_option( 'amst_switcher_show_names', 'yes' ),
-				'position'   => get_option( 'amst_switcher_position', 'inline' ),
+				'show_names' => 'yes',
+				'position'   => 'inline',
+				'style'      => 'list', // list or dropdown
 			),
 			$atts,
-			'amst_language_switcher'
+			'language_switcher'
 		);
 		
 		$language_detector = amst()->language_detector;
@@ -111,36 +114,58 @@ class AMST_Language_Switcher {
 		
 		$show_names = 'yes' === $atts['show_names'];
 		$position = $atts['position'];
+		$style = $atts['style'];
 		
 		// Position class
 		$position_class = '';
 		if ( in_array( $position, array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' ), true ) ) {
 			$position_class = ' amst-fixed amst-position-' . esc_attr( $position );
-		} elseif ( 'inline' !== $position ) {
-			// If not inline and not a recognized fixed position, default to inline
-			$position_class = '';
 		}
 		
-		// Render simple dropdown switcher
+		// v1.5.0: Render with direct href links (NO JavaScript events)
 		ob_start();
 		?>
-		<div class="amst-language-switcher-simple<?php echo esc_attr( $position_class ); ?>">
-			<select class="amst-language-dropdown">
-				<?php foreach ( $enabled_languages as $lang_code ) : ?>
-					<?php
-					$flag = isset( $this->flag_icons[ $lang_code ] ) ? $this->flag_icons[ $lang_code ] : '🌐';
-					$name = isset( $supported_languages[ $lang_code ] ) ? $supported_languages[ $lang_code ] : $lang_code;
-					$url = $this->get_language_url( $lang_code );
-					$is_current = ( $lang_code === $current_lang );
-					?>
-					<option value="<?php echo esc_url( $url ); ?>" <?php selected( $is_current ); ?>>
-						<?php echo esc_html( $flag ); ?> 
-						<?php if ( $show_names ) : ?>
-							<?php echo esc_html( $name ); ?>
-						<?php endif; ?>
-					</option>
-				<?php endforeach; ?>
-			</select>
+		<div class="amst-language-switcher-v5<?php echo esc_attr( $position_class ); ?>">
+			<?php if ( 'dropdown' === $style ) : ?>
+				<!-- Dropdown style -->
+				<select class="amst-language-select" onchange="if(this.value) window.location.href=this.value;">
+					<?php foreach ( $enabled_languages as $lang_code ) : ?>
+						<?php
+						$flag = isset( $this->flag_icons[ $lang_code ] ) ? $this->flag_icons[ $lang_code ] : '🌐';
+						$name = isset( $supported_languages[ $lang_code ] ) ? $supported_languages[ $lang_code ] : $lang_code;
+						$url = $this->get_language_url( $lang_code );
+						$is_current = ( $lang_code === $current_lang );
+						?>
+						<option value="<?php echo esc_url( $url ); ?>" <?php selected( $is_current ); ?>>
+							<?php echo esc_html( $flag ); ?> 
+							<?php if ( $show_names ) : ?>
+								<?php echo esc_html( $name ); ?>
+							<?php endif; ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			<?php else : ?>
+				<!-- List style (default) - Direct href links -->
+				<ul class="amst-language-list">
+					<?php foreach ( $enabled_languages as $lang_code ) : ?>
+						<?php
+						$flag = isset( $this->flag_icons[ $lang_code ] ) ? $this->flag_icons[ $lang_code ] : '🌐';
+						$name = isset( $supported_languages[ $lang_code ] ) ? $supported_languages[ $lang_code ] : $lang_code;
+						$url = $this->get_language_url( $lang_code );
+						$is_current = ( $lang_code === $current_lang );
+						$active_class = $is_current ? ' active' : '';
+						?>
+						<li class="amst-lang-item<?php echo esc_attr( $active_class ); ?>">
+							<a href="<?php echo esc_url( $url ); ?>" class="amst-lang-link" data-lang="<?php echo esc_attr( $lang_code ); ?>">
+								<span class="amst-flag"><?php echo esc_html( $flag ); ?></span>
+								<?php if ( $show_names ) : ?>
+									<span class="amst-lang-name"><?php echo esc_html( $name ); ?></span>
+								<?php endif; ?>
+							</a>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
 		</div>
 		<?php
 		return ob_get_clean();
