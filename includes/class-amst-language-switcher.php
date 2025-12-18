@@ -144,6 +144,7 @@ class AMST_Language_Switcher {
 	
 	/**
 	 * Get URL for switching to a specific language.
+	 * v1.5.2: Removed manual homepage URL configuration - pure automatic URL generation only.
 	 *
 	 * FIXED: Properly replaces language codes instead of stacking them.
 	 * Handles homepage correctly and generates absolute URLs from root.
@@ -163,21 +164,8 @@ class AMST_Language_Switcher {
 		$is_homepage = $this->is_homepage();
 		
 		// Special handling for homepage/front page
+		// v1.5.2: Removed manual homepage URL configuration
 		if ( $is_homepage ) {
-			// Check if manual homepage URL is configured
-			$homepage_urls = get_option( 'amst_homepage_urls', array() );
-			if ( ! empty( $homepage_urls[ $lang ] ) ) {
-				// Use manually configured homepage URL
-				$url_template = $homepage_urls[ $lang ];
-				$url = str_replace( 
-					array( '{home}', '{lang}' ), 
-					array( $home_url, $lang ), 
-					$url_template 
-				);
-				return trailingslashit( $url );
-			}
-			
-			// Fallback to automatic generation
 			if ( $lang === $default_lang ) {
 				// Default language - just home URL
 				return trailingslashit( $home_url );
