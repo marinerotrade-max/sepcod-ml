@@ -62,6 +62,47 @@
         return segments.length > 0 ? '/' + segments.join('/') : '';
     }
     
+    // Delete cookie helper function
+    function deleteCookie(name) {
+        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+    
+    // INITIALIZATION: Set active language based on URL (URL has priority over cookie)
+    function initializeLanguageSwitcher() {
+        // URL PRIORITY: Always check URL first, not cookie
+        var currentLang = getLangFromUrl();
+        
+        // Update dropdown to show current language and mark as active
+        var knownLangs = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 
+                          'el', 'hu', 'ga', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 
+                          'sk', 'sl', 'es', 'sv'];
+        
+        $('.amst-language-dropdown option').each(function() {
+            var optUrl = $(this).val();
+            var optPath = optUrl.replace(window.location.origin, '');
+            var optSegments = optPath.split('/').filter(function(s) { return s.length > 0; });
+            var optLang = (optSegments.length > 0 && optSegments[0].length === 2 && knownLangs.indexOf(optSegments[0]) !== -1) ? optSegments[0] : 'en';
+            
+            if (optLang === currentLang) {
+                $(this).prop('selected', true);
+                $(this).addClass('active'); // Mark current language as active
+            } else {
+                $(this).removeClass('active');
+                $(this).prop('selected', false); // Ensure others are not selected
+            }
+        });
+        
+        // Force cookie to match URL language (URL is source of truth)
+        // Delete old cookie and set new one
+        deleteCookie('amst_language');
+        setCookie('amst_language', currentLang, 30);
+        
+        // If using i18next, sync it with current language
+        if (typeof i18next !== 'undefined') {
+            i18next.changeLanguage(currentLang);
+        }
+    }
+    
     // Main initialization
     $(document).ready(function() {
         // Style the select dropdown
@@ -74,7 +115,10 @@
             'cursor': 'pointer'
         });
         
-        // Enhanced language switching with STRICT URL cleaning
+        // Initialize language switcher on page load
+        initializeLanguageSwitcher();
+        
+        // CLICK EVENT: Handle language switching with forced override
         $('.amst-language-dropdown').on('change', function() {
             var targetUrl = $(this).val();
             if (targetUrl) {
@@ -91,6 +135,9 @@
                 if (segments.length > 0 && segments[0].length === 2 && knownLangs.indexOf(segments[0]) !== -1) {
                     targetLang = segments[0];
                 }
+                
+                // CLICK-OVERRIDE: Delete existing cookie immediately before setting new one
+                deleteCookie('amst_language');
                 
                 // ALTERNATIVE METHOD: Build clean URL from current page
                 // This ensures we never have stacked language codes like /fr/de/
@@ -109,44 +156,19 @@
                     newUrl += '/';
                 }
                 
-                // FORCE cookie update with path=/ to overwrite any existing cookie
-                document.cookie = 'amst_language=' + targetLang + '; expires=' + 
-                    (new Date(Date.now() + 30*24*60*60*1000)).toUTCString() + 
-                    '; path=/; SameSite=Lax';
+                // Set new cookie with target language
+                setCookie('amst_language', targetLang, 30);
                 
-                // Navigate to clean URL - prevents stacking
+                // If using i18next, change language before redirect
+                if (typeof i18next !== 'undefined') {
+                    i18next.changeLanguage(targetLang);
+                }
+                
+                // FORCED REDIRECT: Use window.location.href to ensure page reloads
+                // This forces server to recognize new language
                 window.location.href = newUrl;
             }
         });
-        
-        // On page load: Check if cookie language matches URL language
-        // This handles cache-bypass scenarios
-        var currentLang = getLangFromUrl();
-        var cookieLang = getCookie('amst_language');
-        
-        // Update dropdown to reflect current language AND add active class
-        var knownLangs = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 
-                          'el', 'hu', 'ga', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 
-                          'sk', 'sl', 'es', 'sv'];
-        
-        $('.amst-language-dropdown option').each(function() {
-            var optUrl = $(this).val();
-            var optPath = optUrl.replace(window.location.origin, '');
-            var optSegments = optPath.split('/').filter(function(s) { return s.length > 0; });
-            var optLang = (optSegments.length > 0 && optSegments[0].length === 2 && knownLangs.indexOf(optSegments[0]) !== -1) ? optSegments[0] : 'en';
-            
-            if (optLang === currentLang) {
-                $(this).prop('selected', true);
-                $(this).addClass('active'); // Add active class for current language
-            } else {
-                $(this).removeClass('active');
-            }
-        });
-        
-        // Store current language in cookie if not already set
-        if (!cookieLang || cookieLang !== currentLang) {
-            setCookie('amst_language', currentLang, 30);
-        }
     });
     
 })(jQuery);
