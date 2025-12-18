@@ -265,52 +265,37 @@ class AMST_Language_Switcher {
 	 * @return bool True if homepage.
 	 */
 	private function is_homepage() {
-		// Method 1: Check our custom query var (set by rewrite rules for /de/, /fr/, etc.)
+		// Method 1: Check REQUEST_URI first (most reliable)
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		
+		// Parse to remove query string
+		$uri_parts = explode( '?', $request_uri, 2 );
+		$path = trim( $uri_parts[0], '/' );
+		
+		// Remove language prefix if present
+		$language_detector = amst()->language_detector;
+		$enabled_languages = $language_detector->get_enabled_languages();
+		$path_parts = empty( $path ) ? array() : explode( '/', $path );
+		
+		if ( ! empty( $path_parts[0] ) && in_array( $path_parts[0], $enabled_languages, true ) ) {
+			array_shift( $path_parts );
+			$path = implode( '/', $path_parts );
+		}
+		
+		// If path is empty after removing language prefix, it's homepage
+		if ( empty( $path ) ) {
+			return true;
+		}
+		
+		// Method 2: Check our custom query var (set by rewrite rules for /de/, /fr/, etc.)
 		$is_homepage_var = get_query_var( 'is_homepage' );
 		if ( ! empty( $is_homepage_var ) ) {
 			return true;
 		}
 		
-		// Method 2: Check WordPress query vars
-		global $wp_query;
-		if ( isset( $wp_query ) ) {
-			// Check if this is the main query without any specific page vars
-			if ( empty( $wp_query->query_vars['pagename'] ) && 
-			     empty( $wp_query->query_vars['page_id'] ) && 
-			     empty( $wp_query->query_vars['name'] ) &&
-			     empty( $wp_query->query_vars['category_name'] ) &&
-			     empty( $wp_query->query_vars['tag'] ) &&
-			     empty( $wp_query->query_vars['post_type'] ) ) {
-				return true;
-			}
-		}
-		
-		// Method 3: Check URL path
+		// Method 3: Check $wp->request (empty means homepage)
 		global $wp;
 		if ( isset( $wp->request ) && ( empty( $wp->request ) || $wp->request === '' ) ) {
-			return true;
-		}
-		
-		// Method 4: Check request URI
-		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		$request_uri = trim( $request_uri, '/' );
-		
-		// Remove language prefix if present
-		$language_detector = amst()->language_detector;
-		$enabled_languages = $language_detector->get_enabled_languages();
-		$path_parts = explode( '/', $request_uri );
-		if ( ! empty( $path_parts[0] ) && in_array( $path_parts[0], $enabled_languages, true ) ) {
-			array_shift( $path_parts );
-			$request_uri = implode( '/', $path_parts );
-		}
-		
-		// If path is empty or just has query string, it's homepage
-		if ( empty( $request_uri ) || strpos( $request_uri, '?' ) === 0 ) {
-			return true;
-		}
-		
-		// Method 5: WordPress conditionals (least reliable, use as last resort)
-		if ( is_front_page() || is_home() ) {
 			return true;
 		}
 		
