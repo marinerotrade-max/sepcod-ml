@@ -31,7 +31,7 @@ class AMST_Language_Detector {
     }
     
     /**
-     * Detect language from URL.
+     * Detect language from URL and cookie.
      */
     public function detect_language() {
         $default_lang = get_option( 'amst_default_language', 'en' );
@@ -51,19 +51,19 @@ class AMST_Language_Detector {
         if ( ! empty( $potential_lang ) && in_array( $potential_lang, $enabled_languages, true ) ) {
             // Language prefix found in URL - this takes highest priority
             $this->current_language = $potential_lang;
-            // Store language choice in cookie for persistence
+            // Store language choice in cookie for 30-day persistence
             $this->set_language_cookie( $potential_lang );
         } else {
-            // No language prefix in URL
-            // Use default language - NO AUTO-REDIRECT
-            // This prevents redirecting to blog and keeps users on the current page
-            $this->current_language = $default_lang;
-            
-            // Check if user has a language preference cookie
+            // No language prefix in URL - check cookie
             $cookie_lang = $this->get_language_cookie();
             
-            // Clear cookie if it's set to default language (no need to persist default)
-            if ( $cookie_lang === $default_lang ) {
+            if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) ) {
+                // User has a valid language preference cookie
+                $this->current_language = $cookie_lang;
+            } else {
+                // No valid cookie - use default language
+                $this->current_language = $default_lang;
+                // Clear any invalid cookie
                 $this->clear_language_cookie();
             }
         }

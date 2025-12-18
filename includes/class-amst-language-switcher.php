@@ -53,6 +53,7 @@ class AMST_Language_Switcher {
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_shortcode( 'amst_language_switcher', array( $this, 'render_shortcode' ) );
+		add_filter( 'home_url', array( $this, 'filter_home_url' ), 10, 2 );
 	}
 	
 	/**
@@ -124,7 +125,7 @@ class AMST_Language_Switcher {
 		ob_start();
 		?>
 		<div class="amst-language-switcher-simple<?php echo esc_attr( $position_class ); ?>">
-			<select class="amst-language-dropdown" onchange="if(this.value) window.location.href=this.value;">
+			<select class="amst-language-dropdown">
 				<?php foreach ( $enabled_languages as $lang_code ) : ?>
 					<?php
 					$flag = isset( $this->flag_icons[ $lang_code ] ) ? $this->flag_icons[ $lang_code ] : '🌐';
@@ -318,5 +319,52 @@ class AMST_Language_Switcher {
 	 */
 	public function get_flag_icon( $lang ) {
 		return isset( $this->flag_icons[ $lang ] ) ? $this->flag_icons[ $lang ] : '🌐';
+	}
+	
+	/**
+	 * Filter home_url to add language prefix for menu links.
+	 * This ensures Home button and logo link to the correct language homepage.
+	 *
+	 * @param string $url The home URL.
+	 * @param string $path Path relative to home URL.
+	 * @return string Modified home URL with language prefix.
+	 */
+	public function filter_home_url( $url, $path ) {
+		// Don't modify in admin
+		if ( is_admin() ) {
+			return $url;
+		}
+		
+		$language_detector = amst()->language_detector;
+		$current_lang = $language_detector->get_current_language();
+		$default_lang = $language_detector->get_default_language();
+		
+		// If current language is default, no modification needed
+		if ( $current_lang === $default_lang ) {
+			return $url;
+		}
+		
+		// Check if URL already has language prefix to avoid duplication
+		$parsed_url = wp_parse_url( $url );
+		$url_path = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+		$path_parts = explode( '/', $url_path );
+		
+		$enabled_languages = $language_detector->get_enabled_languages();
+		
+		// If first part is already a language code, don't add another
+		if ( ! empty( $path_parts[0] ) && in_array( $path_parts[0], $enabled_languages, true ) ) {
+			return $url;
+		}
+		
+		// Add language prefix to home URL
+		$home_url = untrailingslashit( get_option( 'home' ) );
+		
+		if ( empty( $path ) || $path === '/' ) {
+			// Homepage link - add language prefix
+			return trailingslashit( $home_url . '/' . $current_lang );
+		} else {
+			// Other paths - add language prefix before the path
+			return $home_url . '/' . $current_lang . '/' . ltrim( $path, '/' );
+		}
 	}
 }
