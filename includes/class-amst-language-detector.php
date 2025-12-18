@@ -31,13 +31,23 @@ class AMST_Language_Detector {
     }
     
     /**
-     * Detect language from URL and cookie.
+     * Detect language from URL and cookie with fresh reading on every page load.
      */
     public function detect_language() {
         $default_lang = get_option( 'amst_default_language', 'en' );
         $enabled_languages = get_option( 'amst_enabled_languages', array( 'en' ) );
         
-        // Get current URL path.
+        // PRIORITY 1: Check URL parameter ?lang=XX (highest priority - overrides cookie)
+        $url_param_lang = isset( $_GET['lang'] ) ? sanitize_text_field( wp_unslash( $_GET['lang'] ) ) : '';
+        if ( ! empty( $url_param_lang ) && in_array( $url_param_lang, $enabled_languages, true ) ) {
+            $this->current_language = $url_param_lang;
+            // Overwrite cookie with URL parameter
+            $this->set_language_cookie( $url_param_lang );
+            $GLOBALS['amst_current_language'] = $this->current_language;
+            return;
+        }
+        
+        // PRIORITY 2: Check URL path prefix (e.g., /de/, /fr/)
         $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
         $path = wp_parse_url( $request_uri, PHP_URL_PATH );
         
@@ -49,12 +59,13 @@ class AMST_Language_Detector {
         $potential_lang = isset( $path_parts[0] ) ? $path_parts[0] : '';
         
         if ( ! empty( $potential_lang ) && in_array( $potential_lang, $enabled_languages, true ) ) {
-            // Language prefix found in URL - this takes highest priority
+            // Language prefix found in URL path
             $this->current_language = $potential_lang;
-            // Store language choice in cookie for 30-day persistence
+            // Update cookie to match URL (always sync cookie with URL)
             $this->set_language_cookie( $potential_lang );
         } else {
-            // No language prefix in URL - check cookie
+            // PRIORITY 3: No URL prefix - read fresh cookie on EVERY page load
+            // Force fresh cookie read - don't cache it
             $cookie_lang = $this->get_language_cookie();
             
             if ( $cookie_lang && in_array( $cookie_lang, $enabled_languages, true ) ) {
@@ -73,22 +84,25 @@ class AMST_Language_Detector {
     }
     
     /**
-     * Set language preference cookie.
+     * Set language preference cookie - ALWAYS overwrites existing cookie.
      *
      * @param string $lang Language code.
      */
     private function set_language_cookie( $lang ) {
         if ( ! headers_sent() ) {
-            setcookie( 'amst_language', $lang, time() + ( 30 * DAY_IN_SECONDS ), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+            // Force overwrite with path=/ to ensure cookie is updated site-wide
+            setcookie( 'amst_language', $lang, time() + ( 30 * DAY_IN_SECONDS ), '/', COOKIE_DOMAIN, is_ssl(), false );
         }
     }
     
     /**
-     * Get language preference from cookie.
+     * Get language preference from cookie - FRESH READ on every call.
      *
      * @return string|null Language code or null if not set.
      */
     private function get_language_cookie() {
+        // Force fresh cookie read - check $_COOKIE superglobal directly
+        // This ensures we always get the latest value, not a cached one
         return isset( $_COOKIE['amst_language'] ) ? sanitize_text_field( wp_unslash( $_COOKIE['amst_language'] ) ) : null;
     }
     

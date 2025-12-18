@@ -66,10 +66,13 @@
                     targetLang = segments[0];
                 }
                 
-                // Store language preference in cookie for 30 days
-                setCookie('amst_language', targetLang, 30);
+                // FORCE cookie update with path=/ to overwrite any existing cookie
+                document.cookie = 'amst_language=' + targetLang + '; expires=' + 
+                    (new Date(Date.now() + 30*24*60*60*1000)).toUTCString() + 
+                    '; path=/; SameSite=Lax';
                 
-                // Navigate to target URL
+                // Navigate to target URL - this will trigger a fresh page load
+                // Server will read the updated cookie and show correct language
                 window.location.href = targetUrl;
             }
         });
