@@ -28,16 +28,38 @@
         return null;
     }
     
-    // Extract language from URL
+    // Extract language from URL - with validation against known languages
     function getLangFromUrl() {
         var path = window.location.pathname;
         var segments = path.split('/').filter(function(s) { return s.length > 0; });
         
-        // Check if first segment is a 2-letter language code
-        if (segments.length > 0 && segments[0].length === 2) {
+        // Known EU language codes (24 languages)
+        var knownLangs = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 
+                          'el', 'hu', 'ga', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 
+                          'sk', 'sl', 'es', 'sv'];
+        
+        // Check if first segment is a valid 2-letter language code
+        if (segments.length > 0 && segments[0].length === 2 && knownLangs.indexOf(segments[0]) !== -1) {
             return segments[0];
         }
         return 'en'; // Default language
+    }
+    
+    // CRITICAL FIX: Remove ALL language prefixes from path (prevents /fr/de/ stacking)
+    function removeAllLanguagePrefixes(path) {
+        var knownLangs = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 
+                          'el', 'hu', 'ga', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 
+                          'sk', 'sl', 'es', 'sv'];
+        
+        var segments = path.split('/').filter(function(s) { return s.length > 0; });
+        
+        // Keep removing first segment while it's a language code
+        while (segments.length > 0 && segments[0].length === 2 && knownLangs.indexOf(segments[0]) !== -1) {
+            segments.shift();
+        }
+        
+        // Return cleaned path
+        return segments.length > 0 ? '/' + segments.join('/') : '';
     }
     
     // Main initialization
@@ -52,7 +74,7 @@
             'cursor': 'pointer'
         });
         
-        // Enhanced language switching with cookie support
+        // Enhanced language switching with STRICT URL cleaning
         $('.amst-language-dropdown').on('change', function() {
             var targetUrl = $(this).val();
             if (targetUrl) {
@@ -61,9 +83,30 @@
                 var segments = urlPath.split('/').filter(function(s) { return s.length > 0; });
                 var targetLang = 'en'; // default
                 
-                // Check if first segment is a 2-letter language code
-                if (segments.length > 0 && segments[0].length === 2) {
+                var knownLangs = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 
+                                  'el', 'hu', 'ga', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 
+                                  'sk', 'sl', 'es', 'sv'];
+                
+                // Check if first segment is a valid 2-letter language code
+                if (segments.length > 0 && segments[0].length === 2 && knownLangs.indexOf(segments[0]) !== -1) {
                     targetLang = segments[0];
+                }
+                
+                // ALTERNATIVE METHOD: Build clean URL from current page
+                // This ensures we never have stacked language codes like /fr/de/
+                var currentPath = window.location.pathname;
+                var cleanPath = removeAllLanguagePrefixes(currentPath);
+                
+                // Build new URL with only the target language
+                var newUrl = window.location.origin;
+                if (targetLang !== 'en') {
+                    newUrl += '/' + targetLang;
+                }
+                newUrl += cleanPath;
+                
+                // Ensure trailing slash for consistency
+                if (!newUrl.endsWith('/') && newUrl.indexOf('?') === -1) {
+                    newUrl += '/';
                 }
                 
                 // FORCE cookie update with path=/ to overwrite any existing cookie
@@ -71,9 +114,8 @@
                     (new Date(Date.now() + 30*24*60*60*1000)).toUTCString() + 
                     '; path=/; SameSite=Lax';
                 
-                // Navigate to target URL - this will trigger a fresh page load
-                // Server will read the updated cookie and show correct language
-                window.location.href = targetUrl;
+                // Navigate to clean URL - prevents stacking
+                window.location.href = newUrl;
             }
         });
         
@@ -82,15 +124,22 @@
         var currentLang = getLangFromUrl();
         var cookieLang = getCookie('amst_language');
         
-        // Update dropdown to reflect current language
+        // Update dropdown to reflect current language AND add active class
+        var knownLangs = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 
+                          'el', 'hu', 'ga', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 
+                          'sk', 'sl', 'es', 'sv'];
+        
         $('.amst-language-dropdown option').each(function() {
             var optUrl = $(this).val();
             var optPath = optUrl.replace(window.location.origin, '');
             var optSegments = optPath.split('/').filter(function(s) { return s.length > 0; });
-            var optLang = (optSegments.length > 0 && optSegments[0].length === 2) ? optSegments[0] : 'en';
+            var optLang = (optSegments.length > 0 && optSegments[0].length === 2 && knownLangs.indexOf(optSegments[0]) !== -1) ? optSegments[0] : 'en';
             
             if (optLang === currentLang) {
                 $(this).prop('selected', true);
+                $(this).addClass('active'); // Add active class for current language
+            } else {
+                $(this).removeClass('active');
             }
         });
         

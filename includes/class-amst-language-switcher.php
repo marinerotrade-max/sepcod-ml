@@ -217,15 +217,14 @@ class AMST_Language_Switcher {
 		// Get all enabled language codes
 		$enabled_languages = $language_detector->get_enabled_languages();
 		
-		// Check if the first segment is a language code
-		$has_lang_prefix = false;
-		if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
-			// Remove the existing language code
+		// CRITICAL FIX: Remove ALL language prefixes (not just first one)
+		// This prevents URL stacking like /fr/de/ or /de/fr/de/
+		// Keep removing segments while the first one is a language code
+		while ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
 			array_shift( $path_segments );
-			$has_lang_prefix = true;
 		}
 		
-		// Now $path_segments contains the path WITHOUT any language prefix
+		// Now $path_segments contains the path WITHOUT any language prefixes
 		$clean_path = implode( '/', $path_segments );
 		
 		// Build the new URL with absolute path from root
