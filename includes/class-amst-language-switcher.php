@@ -51,40 +51,10 @@ class AMST_Language_Switcher {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		// v1.5.1: Removed JavaScript enqueuing - pure PHP links only
 		add_shortcode( 'amst_language_switcher', array( $this, 'render_shortcode' ) );
 		add_shortcode( 'language_switcher', array( $this, 'render_shortcode' ) ); // v1.5.0: Add alias shortcode
 		add_filter( 'home_url', array( $this, 'filter_home_url' ), 10, 2 );
-	}
-	
-	/**
-	 * Enqueue CSS and JS assets.
-	 */
-	public function enqueue_assets() {
-		wp_enqueue_style(
-			'amst-language-switcher',
-			plugins_url( 'assets/css/language-switcher.css', dirname( __FILE__ ) ),
-			array(),
-			'1.0.0'
-		);
-		
-		wp_enqueue_script(
-			'amst-language-switcher',
-			plugins_url( 'assets/js/language-switcher.js', dirname( __FILE__ ) ),
-			array( 'jquery' ),
-			'1.0.0',
-			true
-		);
-		
-		// Pass settings to JS
-		$settings = array(
-			'show_names'     => get_option( 'amst_switcher_show_names', 'no' ),
-			'modal_title'    => get_option( 'amst_switcher_modal_title', __( 'Select Language', 'auto-multilingual-seo' ) ),
-			'flag_size'      => get_option( 'amst_switcher_flag_size', 'medium' ),
-			'position'       => get_option( 'amst_switcher_position', 'bottom-right' ),
-		);
-		
-		wp_localize_script( 'amst-language-switcher', 'amstSwitcher', $settings );
 	}
 	
 	/**
