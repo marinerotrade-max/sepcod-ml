@@ -26,7 +26,8 @@ class AMST_Language_Detector {
      * Constructor.
      */
     public function __construct() {
-        add_action( 'init', array( $this, 'detect_language' ), 1 );
+        // FIXED v1.4.10: Use plugins_loaded hook for better timing with cookie setting
+        add_action( 'plugins_loaded', array( $this, 'detect_language' ), 1 );
         add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
     }
     
@@ -117,16 +118,16 @@ class AMST_Language_Detector {
     }
     
     /**
-     * Set language preference cookie with SIMPLIFIED parameters (PHP-based setter).
-     * CRITICAL FIX v1.4.9: Removed domain, secure, and httponly parameters that block cookie on some servers.
+     * Set language preference cookie with EXPLICIT domain for Plesk/Hostinger.
+     * CRITICAL FIX v1.4.10: Added explicit domain 'janadory.com' and false flags.
      *
      * @param string $lang Language code.
      */
     private function set_language_cookie_secure( $lang ) {
         if ( ! headers_sent() ) {
-            // SIMPLIFIED: Only essential parameters to ensure cookie works on all servers
-            // Removed domain, secure, and httponly parameters that were blocking cookie storage
-            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/' );
+            // EXPLICIT domain for Plesk/Hostinger: 'janadory.com'
+            // secure = false, httponly = false for maximum compatibility
+            setcookie( 'amst_language', $lang, time() + ( 86400 * 30 ), '/', 'janadory.com', false, false );
         }
     }
     

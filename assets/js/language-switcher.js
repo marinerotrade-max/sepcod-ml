@@ -9,6 +9,18 @@
     // REMOVED v1.4.9: Cookie setting functions no longer needed
     // PHP handles all cookie operations server-side via ?set_lang parameter
     
+    // NEW v1.4.10: Get cookie value (read-only for i18next initialization)
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+    
     // FIXED: Extract language from URL - with validation against known languages
     function getLangFromUrl() {
         var path = window.location.pathname;
@@ -72,11 +84,20 @@
             }
         });
         
-        // If using i18next, sync it with current language from URL
-        // FIXED v1.4.9: Never fall back to 'de-DE' - always use URL language
-        if (typeof i18next !== 'undefined' && i18next.language !== currentLang) {
-            console.log('i18next detected, changing language to: ' + currentLang); // DEBUGGING
-            i18next.changeLanguage(currentLang);
+        // If using i18next, sync it with current language
+        // FIXED v1.4.10: Check cookie first, then URL, never fall back to 'de-DE'
+        if (typeof i18next !== 'undefined') {
+            // Priority: cookie || URL || 'de' (but we already have currentLang from URL)
+            var cookieLang = getCookie('amst_language');
+            var finalLang = cookieLang || currentLang || 'de';
+            
+            // Only change if different to prevent auto-triggering languageChanged
+            if (i18next.language !== finalLang) {
+                console.log('i18next detected, changing language to: ' + finalLang + ' (cookie: ' + cookieLang + ', URL: ' + currentLang + ')'); // DEBUGGING
+                i18next.changeLanguage(finalLang);
+            } else {
+                console.log('i18next already at correct language: ' + finalLang); // DEBUGGING
+            }
         }
     }
     
