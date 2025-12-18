@@ -363,13 +363,11 @@ class AMST_Language_Switcher {
 		$current_lang = $language_detector->get_current_language();
 		$default_lang = $language_detector->get_default_language();
 		
-		// If we're on default language, don't modify menu links
-		if ( $current_lang === $default_lang ) {
-			return $items;
-		}
-		
 		// Get home URL for comparison
 		$home_url = untrailingslashit( home_url() );
+		
+		// Get all enabled language codes
+		$enabled_languages = $language_detector->get_enabled_languages();
 		
 		// Loop through each menu item
 		foreach ( $items as $item ) {
@@ -408,28 +406,40 @@ class AMST_Language_Switcher {
 			$path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '/';
 			$path = trim( $path, '/' );
 			
-			// Check if path already has language prefix and remove it
-			$enabled_languages = $language_detector->get_enabled_languages();
+			// Split path into segments
 			$path_segments = empty( $path ) ? array() : explode( '/', $path );
 			
-			// Remove any existing language prefix (could be different language)
-			if ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
-				// Remove the existing language prefix
+			// Remove ALL language prefixes (handles stacked prefixes like /de/fr/)
+			// Keep removing until we find a segment that's NOT a language code
+			while ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
 				array_shift( $path_segments );
-				$path = implode( '/', $path_segments );
 			}
 			
-			// Build new URL with current language prefix
-			if ( empty( $path ) ) {
-				// Home link: add current language prefix
-				$new_path = '/' . $current_lang . '/';
+			// Rebuild clean path without any language prefixes
+			$clean_path = implode( '/', $path_segments );
+			
+			// Build new URL based on current language
+			if ( $current_lang === $default_lang ) {
+				// Default language (English): no prefix needed
+				if ( empty( $clean_path ) ) {
+					$new_path = '/';
+				} else {
+					$new_path = '/' . $clean_path . '/';
+				}
 			} else {
-				// Other links: prepend current language prefix
-				$new_path = '/' . $current_lang . '/' . $path . '/';
+				// Non-default language: add current language prefix ONCE
+				if ( empty( $clean_path ) ) {
+					$new_path = '/' . $current_lang . '/';
+				} else {
+					$new_path = '/' . $current_lang . '/' . $clean_path . '/';
+				}
 			}
 			
-			// Rebuild URL
+			// Rebuild full URL
 			$new_url = $home_url . $new_path;
+			
+			// Normalize: remove any double slashes (but not in protocol)
+			$new_url = preg_replace('#(?<!:)//+#', '/', $new_url);
 			
 			// Add query string if present
 			if ( ! empty( $parsed_url['query'] ) ) {
