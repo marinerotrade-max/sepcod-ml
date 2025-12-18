@@ -272,34 +272,29 @@ class AMST_Language_Switcher {
 		$uri_parts = explode( '?', $request_uri, 2 );
 		$path = trim( $uri_parts[0], '/' );
 		
-		// Remove language prefix if present
-		$language_detector = amst()->language_detector;
-		$enabled_languages = $language_detector->get_enabled_languages();
-		$path_parts = empty( $path ) ? array() : explode( '/', $path );
-		
-		if ( ! empty( $path_parts[0] ) && in_array( $path_parts[0], $enabled_languages, true ) ) {
-			array_shift( $path_parts );
-			$path = implode( '/', $path_parts );
-		}
-		
-		// If path is empty after removing language prefix, it's homepage
-		if ( empty( $path ) ) {
+		// If we have a non-empty path, check if it's just a language code or has actual content
+		if ( ! empty( $path ) ) {
+			// Remove language prefix if present
+			$language_detector = amst()->language_detector;
+			$enabled_languages = $language_detector->get_enabled_languages();
+			$path_parts = explode( '/', $path );
+			
+			if ( ! empty( $path_parts[0] ) && in_array( $path_parts[0], $enabled_languages, true ) ) {
+				array_shift( $path_parts );
+				$path = implode( '/', $path_parts );
+			}
+			
+			// If path still has content after removing language prefix, it's NOT homepage
+			if ( ! empty( $path ) ) {
+				return false;
+			}
+			
+			// If path is now empty, it was just a language prefix - this IS homepage
 			return true;
 		}
 		
-		// Method 2: Check our custom query var (set by rewrite rules for /de/, /fr/, etc.)
-		$is_homepage_var = get_query_var( 'is_homepage' );
-		if ( ! empty( $is_homepage_var ) ) {
-			return true;
-		}
-		
-		// Method 3: Check $wp->request (empty means homepage)
-		global $wp;
-		if ( isset( $wp->request ) && ( empty( $wp->request ) || $wp->request === '' ) ) {
-			return true;
-		}
-		
-		return false;
+		// Path was empty from the start - this is homepage
+		return true;
 	}
 	
 	/**
