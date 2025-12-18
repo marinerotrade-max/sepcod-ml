@@ -205,6 +205,7 @@ class AMST_Language_Switcher {
 		// Keep removing segments while the first one is a language code
 		while ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
 			array_shift( $path_segments );
+			$path_segments = array_values( $path_segments ); // v1.5.3: Reindex array after shift
 		}
 		
 		// Now $path_segments contains the path WITHOUT any language prefixes
