@@ -61,14 +61,18 @@ class AMST_Translator {
         $content_hash = $this->generate_content_hash( $text );
         
         // PRIORITY 1: Check for manual translation in database
+        // v1.7.4: Hard early exit - return immediately if translation exists
         $manual_translation = $this->cache->get_translation( $content_hash, $source_lang, $target_lang );
         if ( false !== $manual_translation ) {
+            // Hard exit: translation found, no further processing needed
             return $manual_translation;
         }
         
         // PRIORITY 2: Check for automatic translation in transient (temporary cache)
+        // v1.7.4: Hard early exit - return immediately if translation exists
         $automatic_translation = $this->cache->get_automatic_translation( $content_hash, $source_lang, $target_lang );
         if ( false !== $automatic_translation ) {
+            // Hard exit: translation found, no further processing needed
             return $automatic_translation;
         }
         
