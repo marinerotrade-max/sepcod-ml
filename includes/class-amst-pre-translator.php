@@ -204,7 +204,10 @@ class AMST_Pre_Translator {
 				
 			case 'menus':
 				return $this->get_menu_items( $offset );
-				
+			
+			case 'widgets':
+				return $this->get_widget_items( $offset );
+			
 			default:
 				return array();
 		}
@@ -296,6 +299,60 @@ class AMST_Pre_Translator {
 	}
 	
 	/**
+	 * Get widget items for processing.
+	 *
+	 * @param int $offset Offset for pagination.
+	 * @return array Widget items.
+	 */
+	private function get_widget_items( $offset ) {
+		// Get all active widgets from all sidebars.
+		$sidebars_widgets = get_option( 'sidebars_widgets', array() );
+		
+		if ( empty( $sidebars_widgets ) || ! is_array( $sidebars_widgets ) ) {
+			return array();
+		}
+		
+		$all_widget_items = array();
+		
+		// Iterate through all sidebars and collect widgets.
+		foreach ( $sidebars_widgets as $sidebar_id => $widget_ids ) {
+			// Skip inactive widgets and special keys.
+			if ( 'wp_inactive_widgets' === $sidebar_id || 'array_version' === $sidebar_id || empty( $widget_ids ) || ! is_array( $widget_ids ) ) {
+				continue;
+			}
+			
+			foreach ( $widget_ids as $widget_id ) {
+				// Parse widget ID to get base and number.
+				if ( preg_match( '/^(.+?)-(\d+)$/', $widget_id, $matches ) ) {
+					$id_base = $matches[1];
+					$widget_number = intval( $matches[2] );
+					
+					// Get widget options.
+					$widget_options = get_option( 'widget_' . $id_base, array() );
+					
+					if ( isset( $widget_options[ $widget_number ] ) ) {
+						$widget_data = $widget_options[ $widget_number ];
+						
+						// Create widget item object.
+						$widget_item = (object) array(
+							'id'       => $widget_id,
+							'id_base'  => $id_base,
+							'number'   => $widget_number,
+							'sidebar'  => $sidebar_id,
+							'data'     => $widget_data,
+						);
+						
+						$all_widget_items[] = $widget_item;
+					}
+				}
+			}
+		}
+		
+		// Apply offset and limit for batch processing.
+		return array_slice( $all_widget_items, $offset, $this->batch_size );
+	}
+	
+	/**
 	 * Extract content from item.
 	 *
 	 * @param WP_Post|object $item Content item.
@@ -314,6 +371,36 @@ class AMST_Pre_Translator {
 				);
 			}
 			return array();
+		}
+		
+		// Handle widget items differently.
+		if ( 'widgets' === $type ) {
+			// Widgets are objects with data property containing widget-specific fields.
+			$widget_content = array(
+				'id'   => isset( $item->id ) ? $item->id : 0,
+				'type' => $type,
+			);
+			
+			// Extract text-based fields from widget data.
+			if ( isset( $item->data ) && is_array( $item->data ) ) {
+				// Common text fields in widgets.
+				if ( ! empty( $item->data['title'] ) ) {
+					$widget_content['title'] = $item->data['title'];
+				}
+				if ( ! empty( $item->data['text'] ) ) {
+					$widget_content['content'] = $item->data['text'];
+				}
+				if ( ! empty( $item->data['content'] ) ) {
+					$widget_content['content'] = $item->data['content'];
+				}
+			}
+			
+			// Return empty if no translatable content found.
+			if ( empty( $widget_content['title'] ) && empty( $widget_content['content'] ) ) {
+				return array();
+			}
+			
+			return $widget_content;
 		}
 		
 		// Handle standard post types.
@@ -444,12 +531,45 @@ class AMST_Pre_Translator {
 			}
 		}
 		
+		// Count widgets with text content.
+		$widgets_count = 0;
+		$sidebars_widgets = get_option( 'sidebars_widgets', array() );
+		if ( ! empty( $sidebars_widgets ) && is_array( $sidebars_widgets ) ) {
+			foreach ( $sidebars_widgets as $sidebar_id => $widget_ids ) {
+				// Skip inactive widgets and special keys.
+				if ( 'wp_inactive_widgets' === $sidebar_id || 'array_version' === $sidebar_id || empty( $widget_ids ) || ! is_array( $widget_ids ) ) {
+					continue;
+				}
+				
+				foreach ( $widget_ids as $widget_id ) {
+					// Parse widget ID to get base and number.
+					if ( preg_match( '/^(.+?)-(\d+)$/', $widget_id, $matches ) ) {
+						$id_base = $matches[1];
+						$widget_number = intval( $matches[2] );
+						
+						// Get widget options.
+						$widget_options = get_option( 'widget_' . $id_base, array() );
+						
+						if ( isset( $widget_options[ $widget_number ] ) ) {
+							$widget_data = $widget_options[ $widget_number ];
+							
+							// Check if widget has text content.
+							if ( ! empty( $widget_data['title'] ) || ! empty( $widget_data['text'] ) || ! empty( $widget_data['content'] ) ) {
+								$widgets_count++;
+							}
+						}
+					}
+				}
+			}
+		}
+		
 		return array(
 			'pages_count'       => $pages_count,
 			'posts_count'       => $posts_count,
 			'directorist_count' => $directorist_count,
 			'menus_count'       => $menus_count,
-			'total_count'       => $pages_count + $posts_count + $directorist_count + $menus_count,
+			'widgets_count'     => $widgets_count,
+			'total_count'       => $pages_count + $posts_count + $directorist_count + $menus_count + $widgets_count,
 			'enabled_languages' => $enabled_languages,
 			'batch_size'        => $this->batch_size,
 		);

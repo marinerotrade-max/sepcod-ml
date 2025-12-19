@@ -42,6 +42,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<td id="amst-menus-count">-</td>
 				</tr>
 				<tr>
+					<td><?php esc_html_e( 'Widgets:', 'auto-multilingual-seo' ); ?></td>
+					<td id="amst-widgets-count">-</td>
+				</tr>
+				<tr>
 					<td><strong><?php esc_html_e( 'Total Items:', 'auto-multilingual-seo' ); ?></strong></td>
 					<td><strong id="amst-total-count">-</strong></td>
 				</tr>
@@ -108,6 +112,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<td class="amst-translated">0</td>
 						<td class="amst-status">-</td>
 					</tr>
+					<tr id="amst-stat-widgets">
+						<td><?php esc_html_e( 'Widgets', 'auto-multilingual-seo' ); ?></td>
+						<td class="amst-processed">0</td>
+						<td class="amst-translated">0</td>
+						<td class="amst-status">-</td>
+					</tr>
 				</tbody>
 			</table>
 		</div>
@@ -132,7 +142,8 @@ jQuery(document).ready(function($) {
 		pages: { processed: 0, translated: 0 },
 		posts: { processed: 0, translated: 0 },
 		directorist: { processed: 0, translated: 0 },
-		menus: { processed: 0, translated: 0 }
+		menus: { processed: 0, translated: 0 },
+		widgets: { processed: 0, translated: 0 }
 	};
 	
 	// Load status on page load.
@@ -157,7 +168,8 @@ jQuery(document).ready(function($) {
 			pages: { processed: 0, translated: 0 },
 			posts: { processed: 0, translated: 0 },
 			directorist: { processed: 0, translated: 0 },
-			menus: { processed: 0, translated: 0 }
+			menus: { processed: 0, translated: 0 },
+			widgets: { processed: 0, translated: 0 }
 		};
 		
 		updateStats();
@@ -189,6 +201,7 @@ jQuery(document).ready(function($) {
 					$('#amst-posts-count').text(response.data.posts_count);
 					$('#amst-directorist-count').text(response.data.directorist_count);
 					$('#amst-menus-count').text(response.data.menus_count);
+					$('#amst-widgets-count').text(response.data.widgets_count);
 					$('#amst-total-count').text(response.data.total_count);
 					$('#amst-enabled-languages').text(response.data.enabled_languages.join(', '));
 				}
@@ -232,13 +245,15 @@ jQuery(document).ready(function($) {
 					if (data.complete) {
 						$('#amst-stat-' + type + ' .amst-status').html('<span style="color: green;">✓ <?php esc_html_e( 'Complete', 'auto-multilingual-seo' ); ?></span>');
 						
-						// Move to next type.
+						// Move to next type: pages → posts → directorist → menus → widgets → finish.
 						if (type === 'pages') {
 							processType('posts', 0);
 						} else if (type === 'posts') {
 							processType('directorist', 0);
 						} else if (type === 'directorist') {
 							processType('menus', 0);
+						} else if (type === 'menus') {
+							processType('widgets', 0);
 						} else {
 							finishPreparation();
 						}
