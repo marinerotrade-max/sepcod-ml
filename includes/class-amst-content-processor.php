@@ -71,6 +71,7 @@ class AMST_Content_Processor {
     
     /**
      * Translate the content.
+     * v1.6.0: Uses Language_Context for current language.
      *
      * @param string $content Content.
      * @return string Translated content.
@@ -84,7 +85,10 @@ class AMST_Content_Processor {
             return $content;
         }
         
-        $current_lang = $this->language_detector->get_current_language();
+        // v1.6.0: Get language from centralized context
+        $language_context = AMST_Language_Context::instance();
+        $current_lang = $language_context->get_current_language();
+        
         return $this->translate_content( $content, $current_lang );
     }
     

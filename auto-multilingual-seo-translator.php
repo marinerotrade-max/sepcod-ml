@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AMST_VERSION', '1.5.3' );
+define( 'AMST_VERSION', '1.6.0' );
 define( 'AMST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AMST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AMST_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -29,6 +29,7 @@ define( 'AMST_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-utf8-helper.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-database.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-translator.php';
+require_once AMST_PLUGIN_DIR . 'includes/class-amst-language-context.php'; // v1.6.0: New centralized language context
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-language-detector.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-cache.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-rewrite.php';
@@ -69,7 +70,14 @@ class Auto_Multilingual_SEO_Translator {
     public $translator;
     
     /**
-     * Language detector.
+     * Language context (v1.6.0 - centralized language resolution).
+     *
+     * @var AMST_Language_Context
+     */
+    public $language_context;
+    
+    /**
+     * Language detector (v1.6.0 - now a facade to language_context).
      *
      * @var AMST_Language_Detector
      */
@@ -181,7 +189,12 @@ class Auto_Multilingual_SEO_Translator {
         $this->database = new AMST_Database();
         $this->cache = new AMST_Cache();
         $this->translator = new AMST_Translator( $this->cache );
-        $this->language_detector = new AMST_Language_Detector();
+        
+        // v1.6.0: Initialize centralized language context FIRST
+        $this->language_context = AMST_Language_Context::instance();
+        
+        // v1.6.0: Language detector now delegates to language_context
+        $this->language_detector = new AMST_Language_Detector( $this->language_context );
         $this->rewrite = new AMST_Rewrite( $this->language_detector );
         $this->seo = new AMST_SEO( $this->language_detector );
         $this->sitemap = new AMST_Sitemap( $this->language_detector );

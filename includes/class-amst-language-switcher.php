@@ -58,8 +58,8 @@ class AMST_Language_Switcher {
 	}
 	
 	/**
-	 * Render language switcher shortcode - v1.5.0 PHP Direct Links (NO JavaScript).
-	 * Theme-independent solution with direct href links like gTranslate.
+	 * Render language switcher shortcode - v1.6.0 Uses Language_Context.
+	 * Theme-independent solution with direct href links.
 	 *
 	 * @param array $atts Shortcode attributes.
 	 * @return string HTML output.
@@ -75,11 +75,12 @@ class AMST_Language_Switcher {
 			'language_switcher'
 		);
 		
-		$language_detector = amst()->language_detector;
-		$translator        = amst()->translator;
+		// v1.6.0: Use centralized Language_Context
+		$language_context = AMST_Language_Context::instance();
+		$translator       = amst()->translator;
 		
-		$current_lang = $language_detector->get_current_language();
-		$enabled_languages = $language_detector->get_enabled_languages();
+		$current_lang = $language_context->get_current_language();
+		$enabled_languages = $language_context->get_enabled_languages();
 		$supported_languages = $translator->get_supported_languages();
 		
 		$show_names = 'yes' === $atts['show_names'];
@@ -144,103 +145,45 @@ class AMST_Language_Switcher {
 	
 	/**
 	 * Get URL for switching to a specific language.
-	 * v1.5.2: Removed manual homepage URL configuration - pure automatic URL generation only.
-	 *
-	 * FIXED: Properly replaces language codes instead of stacking them.
-	 * Handles homepage correctly and generates absolute URLs from root.
+	 * v1.6.0: Now uses centralized Language_Context for URL generation.
+	 * 
+	 * This method ONLY generates URLs, it does NOT detect or set any language state.
 	 *
 	 * @param string $lang Language code.
 	 * @return string Language-specific URL (absolute path from root).
 	 */
 	private function get_language_url( $lang ) {
-		$language_detector = amst()->language_detector;
-		$default_lang = $language_detector->get_default_language();
-		$current_lang = $language_detector->get_current_language();
+		$language_context = AMST_Language_Context::instance();
+		$default_lang = $language_context->get_default_language();
 		
 		// Get home URL (always absolute)
 		$home_url = untrailingslashit( home_url( '/' ) );
 		
-		// Check if we're on homepage using multiple detection methods
+		// Check if we're on homepage
 		$is_homepage = $this->is_homepage();
 		
-		// Special handling for homepage/front page
-		// v1.5.2: Removed manual homepage URL configuration
+		// Special handling for homepage
 		if ( $is_homepage ) {
 			if ( $lang === $default_lang ) {
-				// Default language - just home URL
 				return trailingslashit( $home_url );
 			} else {
-				// Other language - home URL with language prefix
-				// e.g., domain.com/de/
 				return trailingslashit( $home_url . '/' . $lang );
 			}
 		}
 		
-		// For all other pages, get current URL and replace/add language code
-		// Use REQUEST_URI for the actual URL path
+		// For all other pages, get current URL and use Language_Context to generate language URL
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		
 		if ( empty( $request_uri ) ) {
-			// Fallback to WordPress request
 			global $wp;
 			$request_uri = '/' . ( isset( $wp->request ) ? $wp->request : '' );
 		}
 		
-		// Parse the URI to separate path from query string
-		$uri_parts = explode( '?', $request_uri, 2 );
-		$path = $uri_parts[0];
-		$query_string = isset( $uri_parts[1] ) ? $uri_parts[1] : '';
+		// Build full current URL
+		$current_url = $home_url . $request_uri;
 		
-		// Remove leading and trailing slashes for processing
-		$path = trim( $path, '/' );
-		
-		// Split path into segments
-		$path_segments = empty( $path ) ? array() : explode( '/', $path );
-		
-		// Get all enabled language codes
-		$enabled_languages = $language_detector->get_enabled_languages();
-		
-		// CRITICAL FIX: Remove ALL language prefixes (not just first one)
-		// This prevents URL stacking like /fr/de/ or /de/fr/de/
-		// Keep removing segments while the first one is a language code
-		while ( ! empty( $path_segments[0] ) && in_array( $path_segments[0], $enabled_languages, true ) ) {
-			array_shift( $path_segments );
-			$path_segments = array_values( $path_segments ); // v1.5.3: Reindex array after shift
-		}
-		
-		// Now $path_segments contains the path WITHOUT any language prefixes
-		$clean_path = implode( '/', $path_segments );
-		
-		// Build the new URL with absolute path from root
-		if ( $lang === $default_lang ) {
-			// For default language, no prefix needed
-			if ( empty( $clean_path ) ) {
-				// Homepage in default language
-				$new_url = $home_url . '/';
-			} else {
-				// Other page in default language
-				$new_url = $home_url . '/' . $clean_path . '/';
-			}
-		} else {
-			// For non-default languages, add the language prefix
-			if ( empty( $clean_path ) ) {
-				// Homepage in target language: domain.com/de/
-				$new_url = $home_url . '/' . $lang . '/';
-			} else {
-				// Other page in target language: domain.com/de/about/
-				$new_url = $home_url . '/' . $lang . '/' . $clean_path . '/';
-			}
-		}
-		
-		// Add query string if it exists
-		if ( ! empty( $query_string ) ) {
-			$new_url .= '?' . $query_string;
-		}
-		
-		// Normalize slashes (avoid double slashes)
-		$new_url = preg_replace( '#(?<!:)//+#', '/', $new_url );
-		
-		return $new_url;
+		// Use Language_Context to generate the language-specific URL
+		return $language_context->get_language_url( $current_url, $lang );
 	}
 	
 	/**

@@ -46,15 +46,19 @@ class AMST_Comprehensive_Filters {
 	
 	/**
 	 * Constructor.
+	 * v1.6.0: Updated to use Language_Context.
 	 *
-	 * @param AMST_Language_Detector $language_detector Language detector.
+	 * @param AMST_Language_Detector $language_detector Language detector (facade).
 	 * @param AMST_Content_Processor $content_processor Content processor.
 	 */
 	public function __construct( $language_detector, $content_processor ) {
 		$this->language_detector = $language_detector;
 		$this->content_processor = $content_processor;
-		$this->current_language  = $language_detector->get_current_language();
-		$this->default_language  = $language_detector->get_default_language();
+		
+		// v1.6.0: Get language from centralized context
+		$language_context = AMST_Language_Context::instance();
+		$this->current_language = $language_context->get_current_language();
+		$this->default_language = $language_context->get_default_language();
 		
 		// Only apply filters if not default language
 		if ( $this->current_language !== $this->default_language ) {
