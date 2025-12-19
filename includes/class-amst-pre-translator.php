@@ -309,12 +309,11 @@ class AMST_Pre_Translator {
 				$translation = $this->translator->translate( $content['title'], $target_lang, $source_lang );
 				
 				if ( ! is_wp_error( $translation ) && ! empty( $translation ) ) {
-					$this->cache->set_translation(
+					$this->cache->save_automatic_translation(
 						$title_hash,
 						$source_lang,
 						$target_lang,
-						$translation,
-						'title'
+						$translation
 					);
 					$generated = true;
 				}
@@ -330,12 +329,11 @@ class AMST_Pre_Translator {
 				$translation = $this->translator->translate( $content['content'], $target_lang, $source_lang );
 				
 				if ( ! is_wp_error( $translation ) && ! empty( $translation ) ) {
-					$this->cache->set_translation(
+					$this->cache->save_automatic_translation(
 						$content_hash,
 						$source_lang,
 						$target_lang,
-						$translation,
-						'content'
+						$translation
 					);
 					$generated = true;
 				}
@@ -351,12 +349,11 @@ class AMST_Pre_Translator {
 				$translation = $this->translator->translate( $content['excerpt'], $target_lang, $source_lang );
 				
 				if ( ! is_wp_error( $translation ) && ! empty( $translation ) ) {
-					$this->cache->set_translation(
+					$this->cache->save_automatic_translation(
 						$excerpt_hash,
 						$source_lang,
 						$target_lang,
-						$translation,
-						'excerpt'
+						$translation
 					);
 					$generated = true;
 				}
