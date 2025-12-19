@@ -46,6 +46,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<td id="amst-widgets-count">-</td>
 				</tr>
 				<tr>
+					<td><?php esc_html_e( 'Theme UI Strings:', 'auto-multilingual-seo' ); ?></td>
+					<td id="amst-ui-strings-count">-</td>
+				</tr>
+				<tr>
 					<td><strong><?php esc_html_e( 'Total Items:', 'auto-multilingual-seo' ); ?></strong></td>
 					<td><strong id="amst-total-count">-</strong></td>
 				</tr>
@@ -118,6 +122,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<td class="amst-translated">0</td>
 						<td class="amst-status">-</td>
 					</tr>
+					<tr id="amst-stat-ui_strings">
+						<td><?php esc_html_e( 'Theme UI Strings', 'auto-multilingual-seo' ); ?></td>
+						<td class="amst-processed">0</td>
+						<td class="amst-translated">0</td>
+						<td class="amst-status">-</td>
+					</tr>
 				</tbody>
 			</table>
 		</div>
@@ -143,7 +153,8 @@ jQuery(document).ready(function($) {
 		posts: { processed: 0, translated: 0 },
 		directorist: { processed: 0, translated: 0 },
 		menus: { processed: 0, translated: 0 },
-		widgets: { processed: 0, translated: 0 }
+		widgets: { processed: 0, translated: 0 },
+		ui_strings: { processed: 0, translated: 0 }
 	};
 	
 	// Load status on page load.
@@ -169,13 +180,14 @@ jQuery(document).ready(function($) {
 			posts: { processed: 0, translated: 0 },
 			directorist: { processed: 0, translated: 0 },
 			menus: { processed: 0, translated: 0 },
-			widgets: { processed: 0, translated: 0 }
+			widgets: { processed: 0, translated: 0 },
+			ui_strings: { processed: 0, translated: 0 }
 		};
 		
 		updateStats();
 		logMessage('<?php esc_html_e( 'Starting translation preparation...', 'auto-multilingual-seo' ); ?>');
 		
-		// Process in order: pages -> posts -> directorist -> menus.
+		// Process in order: pages -> posts -> directorist -> menus -> widgets -> ui_strings.
 		processType('pages', 0);
 	});
 	
@@ -202,6 +214,7 @@ jQuery(document).ready(function($) {
 					$('#amst-directorist-count').text(response.data.directorist_count);
 					$('#amst-menus-count').text(response.data.menus_count);
 					$('#amst-widgets-count').text(response.data.widgets_count);
+					$('#amst-ui-strings-count').text(response.data.ui_strings_count);
 					$('#amst-total-count').text(response.data.total_count);
 					$('#amst-enabled-languages').text(response.data.enabled_languages.join(', '));
 				}
@@ -245,7 +258,7 @@ jQuery(document).ready(function($) {
 					if (data.complete) {
 						$('#amst-stat-' + type + ' .amst-status').html('<span style="color: green;">✓ <?php esc_html_e( 'Complete', 'auto-multilingual-seo' ); ?></span>');
 						
-						// Move to next type: pages → posts → directorist → menus → widgets → finish.
+						// Move to next type: pages → posts → directorist → menus → widgets → ui_strings → finish.
 						if (type === 'pages') {
 							processType('posts', 0);
 						} else if (type === 'posts') {
@@ -254,6 +267,8 @@ jQuery(document).ready(function($) {
 							processType('menus', 0);
 						} else if (type === 'menus') {
 							processType('widgets', 0);
+						} else if (type === 'widgets') {
+							processType('ui_strings', 0);
 						} else {
 							finishPreparation();
 						}

@@ -106,7 +106,7 @@ class AMST_Pre_Translator {
 	/**
 	 * Process a batch of content items.
 	 *
-	 * @param string $type Content type (pages, posts, directorist, menus).
+	 * @param string $type Content type (pages, posts, directorist, menus, widgets, ui_strings).
 	 * @param int    $batch Batch number.
 	 * @return array Processing result.
 	 */
@@ -207,6 +207,9 @@ class AMST_Pre_Translator {
 			
 			case 'widgets':
 				return $this->get_widget_items( $offset );
+			
+			case 'ui_strings':
+				return $this->get_ui_string_items( $offset );
 			
 			default:
 				return array();
@@ -353,6 +356,81 @@ class AMST_Pre_Translator {
 	}
 	
 	/**
+	 * Get common theme UI strings for pre-translation.
+	 *
+	 * This method returns a fixed set of common UI strings that appear in themes.
+	 * These strings can be extended by adding more items to the array.
+	 *
+	 * @return array Array of common UI strings.
+	 */
+	private function get_common_ui_strings() {
+		// Fixed array of common theme UI strings.
+		// This list can be easily extended by adding more strings here.
+		return array(
+			'Read more',
+			'Search',
+			'Submit',
+			'Next',
+			'Previous',
+			'View details',
+			'Continue reading',
+			'Learn more',
+			'Get started',
+			'Contact us',
+			'About us',
+			'Home',
+			'Blog',
+			'Services',
+			'Products',
+			'Portfolio',
+			'Team',
+			'Testimonials',
+			'FAQ',
+			'Privacy Policy',
+			'Terms of Service',
+			'Newsletter',
+			'Subscribe',
+			'Follow us',
+			'Share',
+			'Comment',
+			'Reply',
+			'Edit',
+			'Delete',
+			'Cancel',
+			'Save',
+			'Login',
+			'Register',
+			'Logout',
+			'Forgot password',
+			'Back to top',
+		);
+	}
+	
+	/**
+	 * Get UI string items for processing.
+	 *
+	 * @param int $offset Offset for pagination.
+	 * @return array UI string items.
+	 */
+	private function get_ui_string_items( $offset ) {
+		$common_strings = $this->get_common_ui_strings();
+		
+		// Convert strings to objects for consistent processing.
+		$ui_string_items = array();
+		$id = 1;
+		
+		foreach ( $common_strings as $string ) {
+			$ui_string_items[] = (object) array(
+				'id'   => $id++,
+				'text' => $string,
+			);
+		}
+		
+		// Apply offset and limit for batch processing.
+		return array_slice( $ui_string_items, $offset, $this->batch_size );
+	}
+	
+	/**
 	 * Extract content from item.
 	 *
 	 * @param WP_Post|object $item Content item.
@@ -401,6 +479,19 @@ class AMST_Pre_Translator {
 			}
 			
 			return $widget_content;
+		}
+		
+		// Handle UI strings differently.
+		if ( 'ui_strings' === $type ) {
+			// UI strings are simple objects with text property.
+			if ( isset( $item->text ) && ! empty( $item->text ) ) {
+				return array(
+					'id'    => isset( $item->id ) ? $item->id : 0,
+					'title' => $item->text,
+					'type'  => $type,
+				);
+			}
+			return array();
 		}
 		
 		// Handle standard post types.
@@ -563,13 +654,17 @@ class AMST_Pre_Translator {
 			}
 		}
 		
+		// Count UI strings.
+		$ui_strings_count = count( $this->get_common_ui_strings() );
+		
 		return array(
 			'pages_count'       => $pages_count,
 			'posts_count'       => $posts_count,
 			'directorist_count' => $directorist_count,
 			'menus_count'       => $menus_count,
 			'widgets_count'     => $widgets_count,
-			'total_count'       => $pages_count + $posts_count + $directorist_count + $menus_count + $widgets_count,
+			'ui_strings_count'  => $ui_strings_count,
+			'total_count'       => $pages_count + $posts_count + $directorist_count + $menus_count + $widgets_count + $ui_strings_count,
 			'enabled_languages' => $enabled_languages,
 			'batch_size'        => $this->batch_size,
 		);
