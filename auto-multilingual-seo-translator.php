@@ -3,7 +3,7 @@
  * Plugin Name: Auto Multilingual SEO Translator
  * Plugin URI: https://github.com/marinerotrade-max/sepcod-ml
  * Description: Automatically translate all website content into multiple languages using Google Cloud Translation API with server-side rendering for SEO.
- * Version: 1.5.3
+ * Version: 1.7.0
  * Author: Majed Nefzi
  * Author URI: https://github.com/marinerotrade-max
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AMST_VERSION', '1.6.0' );
+define( 'AMST_VERSION', '1.7.0' );
 define( 'AMST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AMST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AMST_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -32,6 +32,7 @@ require_once AMST_PLUGIN_DIR . 'includes/class-amst-translator.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-language-context.php'; // v1.6.0: New centralized language context
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-language-detector.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-cache.php';
+require_once AMST_PLUGIN_DIR . 'includes/class-amst-pre-translator.php'; // v1.7.0: Pre-translation tool
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-rewrite.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-seo.php';
 require_once AMST_PLUGIN_DIR . 'includes/class-amst-sitemap.php';
@@ -183,6 +184,13 @@ class Auto_Multilingual_SEO_Translator {
     public $language_switcher;
     
     /**
+     * Pre-translator handler (v1.7.0).
+     *
+     * @var AMST_Pre_Translator
+     */
+    public $pre_translator;
+    
+    /**
      * Initialize components.
      */
     private function init_components() {
@@ -203,6 +211,9 @@ class Auto_Multilingual_SEO_Translator {
         $this->manual_translations = new AMST_Manual_Translations( $this->cache, $this->database );
         $this->comprehensive_filters = new AMST_Comprehensive_Filters( $this->language_detector, $this->content_processor );
         $this->language_switcher = new AMST_Language_Switcher();
+        
+        // v1.7.0: Initialize pre-translator for admin-only batch processing
+        $this->pre_translator = new AMST_Pre_Translator( $this->translator, $this->cache, $this->database );
         
         // Attach final cleanup filters for encoding issues (priority 999)
         AMST_UTF8_Helper::attach_final_cleanup_filters();

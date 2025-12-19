@@ -84,6 +84,15 @@ class AMST_Admin {
             'amst-statistics',
             array( $this, 'render_statistics_page' )
         );
+        
+        add_submenu_page(
+            'amst-settings',
+            __( 'Prepare Translations', 'auto-multilingual-seo' ),
+            __( 'Prepare Translations', 'auto-multilingual-seo' ),
+            'manage_options',
+            'amst-prepare-translations',
+            array( $this, 'render_prepare_translations_page' )
+        );
     }
     
     /**
@@ -240,6 +249,17 @@ class AMST_Admin {
         }
         
         include AMST_PLUGIN_DIR . 'admin/views/statistics.php';
+    }
+    
+    /**
+     * Render prepare translations page.
+     */
+    public function render_prepare_translations_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        
+        include AMST_PLUGIN_DIR . 'admin/views/prepare-translations.php';
     }
     
     /**
