@@ -38,6 +38,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<td id="amst-directorist-count">-</td>
 				</tr>
 				<tr>
+					<td><?php esc_html_e( 'Menu Items:', 'auto-multilingual-seo' ); ?></td>
+					<td id="amst-menus-count">-</td>
+				</tr>
+				<tr>
 					<td><strong><?php esc_html_e( 'Total Items:', 'auto-multilingual-seo' ); ?></strong></td>
 					<td><strong id="amst-total-count">-</strong></td>
 				</tr>
@@ -98,6 +102,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<td class="amst-translated">0</td>
 						<td class="amst-status">-</td>
 					</tr>
+					<tr id="amst-stat-menus">
+						<td><?php esc_html_e( 'Menu Items', 'auto-multilingual-seo' ); ?></td>
+						<td class="amst-processed">0</td>
+						<td class="amst-translated">0</td>
+						<td class="amst-status">-</td>
+					</tr>
 				</tbody>
 			</table>
 		</div>
@@ -121,7 +131,8 @@ jQuery(document).ready(function($) {
 	var totalStats = {
 		pages: { processed: 0, translated: 0 },
 		posts: { processed: 0, translated: 0 },
-		directorist: { processed: 0, translated: 0 }
+		directorist: { processed: 0, translated: 0 },
+		menus: { processed: 0, translated: 0 }
 	};
 	
 	// Load status on page load.
@@ -145,13 +156,14 @@ jQuery(document).ready(function($) {
 		totalStats = {
 			pages: { processed: 0, translated: 0 },
 			posts: { processed: 0, translated: 0 },
-			directorist: { processed: 0, translated: 0 }
+			directorist: { processed: 0, translated: 0 },
+			menus: { processed: 0, translated: 0 }
 		};
 		
 		updateStats();
 		logMessage('<?php esc_html_e( 'Starting translation preparation...', 'auto-multilingual-seo' ); ?>');
 		
-		// Process in order: pages -> posts -> directorist.
+		// Process in order: pages -> posts -> directorist -> menus.
 		processType('pages', 0);
 	});
 	
@@ -176,6 +188,7 @@ jQuery(document).ready(function($) {
 					$('#amst-pages-count').text(response.data.pages_count);
 					$('#amst-posts-count').text(response.data.posts_count);
 					$('#amst-directorist-count').text(response.data.directorist_count);
+					$('#amst-menus-count').text(response.data.menus_count);
 					$('#amst-total-count').text(response.data.total_count);
 					$('#amst-enabled-languages').text(response.data.enabled_languages.join(', '));
 				}
@@ -224,6 +237,8 @@ jQuery(document).ready(function($) {
 							processType('posts', 0);
 						} else if (type === 'posts') {
 							processType('directorist', 0);
+						} else if (type === 'directorist') {
+							processType('menus', 0);
 						} else {
 							finishPreparation();
 						}

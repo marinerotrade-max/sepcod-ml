@@ -106,7 +106,7 @@ class AMST_Pre_Translator {
 	/**
 	 * Process a batch of content items.
 	 *
-	 * @param string $type Content type (pages, posts, directorist).
+	 * @param string $type Content type (pages, posts, directorist, menus).
 	 * @param int    $batch Batch number.
 	 * @return array Processing result.
 	 */
@@ -202,6 +202,9 @@ class AMST_Pre_Translator {
 			case 'directorist':
 				return $this->get_directorist_listings( $offset );
 				
+			case 'menus':
+				return $this->get_menu_items( $offset );
+				
 			default:
 				return array();
 		}
@@ -264,13 +267,56 @@ class AMST_Pre_Translator {
 	}
 	
 	/**
+	 * Get menu items for processing.
+	 *
+	 * @param int $offset Offset for pagination.
+	 * @return array Menu items.
+	 */
+	private function get_menu_items( $offset ) {
+		// Get all registered navigation menus.
+		$nav_menus = wp_get_nav_menus();
+		
+		if ( empty( $nav_menus ) ) {
+			return array();
+		}
+		
+		$all_menu_items = array();
+		
+		// Iterate through all menus and collect menu items.
+		foreach ( $nav_menus as $menu ) {
+			$menu_items = wp_get_nav_menu_items( $menu->term_id );
+			
+			if ( ! empty( $menu_items ) && is_array( $menu_items ) ) {
+				$all_menu_items = array_merge( $all_menu_items, $menu_items );
+			}
+		}
+		
+		// Apply offset and limit for batch processing.
+		return array_slice( $all_menu_items, $offset, $this->batch_size );
+	}
+	
+	/**
 	 * Extract content from item.
 	 *
-	 * @param WP_Post $item Content item.
-	 * @param string  $type Content type.
+	 * @param WP_Post|object $item Content item.
+	 * @param string         $type Content type.
 	 * @return array Content data.
 	 */
 	private function extract_content( $item, $type ) {
+		// Handle menu items differently.
+		if ( 'menus' === $type ) {
+			// Menu items are objects with title property.
+			if ( isset( $item->title ) && ! empty( $item->title ) ) {
+				return array(
+					'id'    => isset( $item->ID ) ? $item->ID : 0,
+					'title' => $item->title,
+					'type'  => $type,
+				);
+			}
+			return array();
+		}
+		
+		// Handle standard post types.
 		if ( ! $item instanceof WP_Post ) {
 			return array();
 		}
@@ -386,11 +432,24 @@ class AMST_Pre_Translator {
 			$directorist_count = wp_count_posts( 'at_biz_dir' )->publish;
 		}
 		
+		// Count menu items.
+		$menus_count = 0;
+		$nav_menus   = wp_get_nav_menus();
+		if ( ! empty( $nav_menus ) ) {
+			foreach ( $nav_menus as $menu ) {
+				$menu_items = wp_get_nav_menu_items( $menu->term_id );
+				if ( ! empty( $menu_items ) && is_array( $menu_items ) ) {
+					$menus_count += count( $menu_items );
+				}
+			}
+		}
+		
 		return array(
 			'pages_count'       => $pages_count,
 			'posts_count'       => $posts_count,
 			'directorist_count' => $directorist_count,
-			'total_count'       => $pages_count + $posts_count + $directorist_count,
+			'menus_count'       => $menus_count,
+			'total_count'       => $pages_count + $posts_count + $directorist_count + $menus_count,
 			'enabled_languages' => $enabled_languages,
 			'batch_size'        => $this->batch_size,
 		);
