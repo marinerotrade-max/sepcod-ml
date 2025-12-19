@@ -73,6 +73,13 @@ class AMST_Pre_Translator {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-multilingual-seo' ) ) );
 		}
 		
+		// Safety check: Ensure required objects are initialized.
+		if ( null === $this->translator || null === $this->cache ) {
+			wp_send_json_error( array(
+				'message' => __( 'Translation system not properly initialized. Please refresh the page and try again.', 'auto-multilingual-seo' ),
+			) );
+		}
+		
 		$batch = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 0;
 		$type  = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'pages';
 		
@@ -286,6 +293,11 @@ class AMST_Pre_Translator {
 	 * @return bool Whether translation was generated.
 	 */
 	private function generate_translation_if_missing( $content, $source_lang, $target_lang ) {
+		// Defensive guard: Prevent method calls on null objects.
+		if ( null === $this->translator || null === $this->cache ) {
+			return false;
+		}
+		
 		$generated = false;
 		
 		// Process title.
