@@ -323,43 +323,76 @@ class AMST_Admin {
      * AJAX: Clear cache.
      */
     public function ajax_clear_cache() {
+        // Verify nonce - exits immediately on failure.
         check_ajax_referer( 'amst_admin', 'nonce' );
         
+        // Verify capability - exits immediately on failure.
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permission denied', 'auto-multilingual-seo' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Access denied.', 'auto-multilingual-seo' ) ) );
+            exit;
         }
         
-        $cache = amst()->cache;
-        $result = $cache->clear_cache();
-        
-        if ( $result ) {
-            do_action( 'amst_translations_cleared' );
-            wp_send_json_success( array( 'message' => __( 'Cache cleared successfully', 'auto-multilingual-seo' ) ) );
-        } else {
-            wp_send_json_error( array( 'message' => __( 'Failed to clear cache', 'auto-multilingual-seo' ) ) );
+        // Attempt to clear cache.
+        try {
+            $cache = amst()->cache;
+            if ( ! $cache ) {
+                wp_send_json_error( array( 'message' => __( 'Operation failed.', 'auto-multilingual-seo' ) ) );
+                exit;
+            }
+            
+            $result = $cache->clear_cache();
+            
+            if ( $result ) {
+                do_action( 'amst_translations_cleared' );
+                wp_send_json_success( array( 'message' => __( 'Cache cleared successfully.', 'auto-multilingual-seo' ) ) );
+            } else {
+                wp_send_json_error( array( 'message' => __( 'Operation failed.', 'auto-multilingual-seo' ) ) );
+            }
+        } catch ( Exception $e ) {
+            // Generic error - do not expose details.
+            wp_send_json_error( array( 'message' => __( 'Operation failed.', 'auto-multilingual-seo' ) ) );
         }
+        
+        exit;
     }
     
     /**
      * AJAX: Test API connection.
      */
     public function ajax_test_api() {
+        // Verify nonce - exits immediately on failure.
         check_ajax_referer( 'amst_admin', 'nonce' );
         
+        // Verify capability - exits immediately on failure.
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permission denied', 'auto-multilingual-seo' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Access denied.', 'auto-multilingual-seo' ) ) );
+            exit;
         }
         
-        $translator = amst()->translator;
-        $result = $translator->translate( 'Hello World', 'es', 'en' );
-        
-        if ( is_wp_error( $result ) ) {
-            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
-        } else {
-            wp_send_json_success( array(
-                'message' => __( 'API connection successful', 'auto-multilingual-seo' ),
-                'translation' => $result,
-            ) );
+        // Attempt API test.
+        try {
+            $translator = amst()->translator;
+            if ( ! $translator ) {
+                wp_send_json_error( array( 'message' => __( 'API test failed.', 'auto-multilingual-seo' ) ) );
+                exit;
+            }
+            
+            $result = $translator->translate( 'Hello World', 'es', 'en' );
+            
+            if ( is_wp_error( $result ) ) {
+                // Generic error - do not expose WP_Error details.
+                wp_send_json_error( array( 'message' => __( 'API test failed.', 'auto-multilingual-seo' ) ) );
+            } else {
+                wp_send_json_success( array(
+                    'message' => __( 'API connection successful.', 'auto-multilingual-seo' ),
+                    'translation' => $result,
+                ) );
+            }
+        } catch ( Exception $e ) {
+            // Generic error - do not expose exception details.
+            wp_send_json_error( array( 'message' => __( 'API test failed.', 'auto-multilingual-seo' ) ) );
         }
+        
+        exit;
     }
 }

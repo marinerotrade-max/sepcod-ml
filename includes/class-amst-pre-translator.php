@@ -67,40 +67,75 @@ class AMST_Pre_Translator {
 	 * AJAX handler for preparing translations.
 	 */
 	public function ajax_prepare_translations() {
+		// Verify nonce - exits immediately on failure.
 		check_ajax_referer( 'amst-prepare-translations', 'nonce' );
 		
+		// Verify capability - exits immediately on failure.
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-multilingual-seo' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Access denied.', 'auto-multilingual-seo' ) ) );
+			exit;
 		}
 		
 		// Safety check: Ensure required objects are initialized.
 		if ( null === $this->translator || null === $this->cache ) {
 			wp_send_json_error( array(
-				'message' => __( 'Translation system not properly initialized. Please refresh the page and try again.', 'auto-multilingual-seo' ),
+				'message' => __( 'System not ready. Please refresh the page.', 'auto-multilingual-seo' ),
 			) );
+			exit;
 		}
 		
+		// Sanitize and validate POST parameters only - ignore unexpected params.
 		$batch = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 0;
 		$type  = isset( $_POST['type'] ) ? sanitize_text_field( $_POST['type'] ) : 'pages';
 		
-		$result = $this->process_batch( $type, $batch );
+		// Validate type against allowed values.
+		$allowed_types = array( 'pages', 'posts', 'directorist', 'menus', 'widgets', 'ui_strings' );
+		if ( ! in_array( $type, $allowed_types, true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'auto-multilingual-seo' ) ) );
+			exit;
+		}
 		
-		wp_send_json_success( $result );
+		// Validate batch is non-negative.
+		if ( $batch < 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'auto-multilingual-seo' ) ) );
+			exit;
+		}
+		
+		// Process the batch.
+		try {
+			$result = $this->process_batch( $type, $batch );
+			wp_send_json_success( $result );
+		} catch ( Exception $e ) {
+			// Generic error - do not expose details.
+			wp_send_json_error( array( 'message' => __( 'Processing failed. Please try again.', 'auto-multilingual-seo' ) ) );
+		}
+		
+		exit;
 	}
 	
 	/**
 	 * AJAX handler for getting preparation status.
 	 */
 	public function ajax_get_status() {
+		// Verify nonce - exits immediately on failure.
 		check_ajax_referer( 'amst-prepare-translations', 'nonce' );
 		
+		// Verify capability - exits immediately on failure.
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-multilingual-seo' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Access denied.', 'auto-multilingual-seo' ) ) );
+			exit;
 		}
 		
-		$status = $this->get_preparation_status();
+		// Get status - safe read-only operation.
+		try {
+			$status = $this->get_preparation_status();
+			wp_send_json_success( $status );
+		} catch ( Exception $e ) {
+			// Generic error - do not expose details.
+			wp_send_json_error( array( 'message' => __( 'Failed to retrieve status.', 'auto-multilingual-seo' ) ) );
+		}
 		
-		wp_send_json_success( $status );
+		exit;
 	}
 	
 	/**
