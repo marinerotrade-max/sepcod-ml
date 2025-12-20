@@ -93,6 +93,15 @@ class AMST_Admin {
             'amst-prepare-translations',
             array( $this, 'render_prepare_translations_page' )
         );
+        
+        add_submenu_page(
+            'amst-settings',
+            __( 'Translation Status', 'auto-multilingual-seo' ),
+            __( 'Translation Status', 'auto-multilingual-seo' ),
+            'manage_options',
+            'amst-translation-status',
+            array( $this, 'render_translation_status_page' )
+        );
     }
     
     /**
@@ -260,6 +269,17 @@ class AMST_Admin {
         }
         
         include AMST_PLUGIN_DIR . 'admin/views/prepare-translations.php';
+    }
+    
+    /**
+     * Render Translation Status page.
+     */
+    public function render_translation_status_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        
+        include AMST_PLUGIN_DIR . 'admin/views/translation-status.php';
     }
     
     /**
