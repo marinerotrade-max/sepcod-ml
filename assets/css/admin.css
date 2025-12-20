@@ -1,0 +1,217 @@
+/**
+ * Admin styles for Auto Multilingual SEO Translator.
+ *
+ * @package AutoMultilingualSEO
+ */
+
+/* Settings Container */
+.amst-settings-wrap,
+.amst-languages-wrap,
+.amst-statistics-wrap {
+    max-width: 1200px;
+}
+
+/* Cards */
+.amst-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+.amst-card h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Language Grid */
+.amst-language-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.amst-language-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.amst-language-item:hover {
+    border-color: #0073aa;
+    background: #f7f9fa;
+}
+
+.amst-language-item.active {
+    border-color: #0073aa;
+    background: #f0f7ff;
+}
+
+.amst-language-item input[type="checkbox"] {
+    margin: 0 10px 0 0;
+}
+
+.amst-language-item .language-flag {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #0073aa;
+    color: #fff;
+    font-weight: bold;
+    font-size: 11px;
+    border-radius: 3px;
+    margin-right: 10px;
+}
+
+.amst-language-item .language-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.amst-language-item .language-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #46b450;
+    color: #fff;
+    font-size: 11px;
+    border-radius: 3px;
+}
+
+.amst-language-item input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+/* Statistics */
+.amst-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.amst-stat-box {
+    background: #f7f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+}
+
+.amst-stat-box .stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #0073aa;
+    margin-bottom: 10px;
+}
+
+.amst-stat-box .stat-label {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Status Messages */
+.amst-api-status,
+.amst-cache-status {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.amst-api-status.success,
+.amst-cache-status.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.amst-api-status.error,
+.amst-cache-status.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.amst-api-status.loading,
+.amst-cache-status.loading {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Tables */
+.amst-statistics-wrap .wp-list-table {
+    margin-top: 20px;
+}
+
+.amst-statistics-wrap .wp-list-table th,
+.amst-statistics-wrap .wp-list-table td {
+    padding: 12px;
+}
+
+/* Code Blocks */
+.amst-card code {
+    display: inline-block;
+    padding: 10px 15px;
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-family: Monaco, Consolas, monospace;
+    font-size: 13px;
+    margin: 10px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .amst-language-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .amst-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Language Switcher (Frontend) */
+.amst-language-switcher {
+    padding: 10px 0;
+}
+
+.amst-language-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.amst-language-item {
+    margin: 0;
+}
+
+.amst-language-item a {
+    display: inline-block;
+    padding: 8px 15px;
+    background: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.amst-language-item a:hover {
+    background: #0073aa;
+    color: #fff;
+}
+
+.amst-language-item.active a {
+    background: #0073aa;
+    color: #fff;
+    font-weight: bold;
+}
